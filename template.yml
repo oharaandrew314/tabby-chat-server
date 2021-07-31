@@ -1,0 +1,97 @@
+Transform: AWS::Serverless-2016-10-31
+
+Globals:
+  Function:
+    Runtime: java11
+    MemorySize: 2048
+    Environment:
+      Variables:
+        USERS_TABLE_NAME: !Ref Users
+        CONTACTS_TABLE_NAME: !Ref Contacts
+        MESSAGES_TABLE_NAME: !Ref Messages
+        TOKENS_TABLE_NAME: !Ref Tokens
+
+Resources:
+  Api:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      #      CorsConfiguration:
+      #        AllowCredentials: true
+      #        AllowHeaders: [ Authorization ]
+      #        AllowMethods: [ GET, POST ]
+      #        AllowOrigins: [ !Ref FrontendHost ]
+      #        ExposeHeaders: [ '*' ]
+      DisableExecuteApiEndpoint: true
+
+  ApiHandler:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Timeout: 10
+      Handler: io.andrewohara.cheetosbros.ApiLambdaHandler
+      MemorySize: 1024
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref Users
+        - DynamoDBCrudPolicy:
+            TableName: !Ref Contacts
+        - DynamoDBCrudPolicy:
+            TableName: !Ref Messages
+        - DynamoDBCrudPolicy:
+            TableName: !Ref Tokens
+      Events:
+        HttpApiEvent:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref Api
+
+  Users:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+
+  Contacts:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: owner
+          AttributeType: S
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: owner
+          KeyType: HASH
+        - AttributeName: id
+          KeyType: RANGE
+
+  Messages:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: owner
+          AttributeType: S
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: owner
+          KeyType: HASH
+        - AttributeName: id
+          KeyType: RANGE
+
+  Tokens:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: value
+          AttributeType: S
+      KeySchema:
+        - AttributeName: value
+          KeyType: HASH
