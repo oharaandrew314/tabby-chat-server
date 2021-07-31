@@ -6,6 +6,7 @@ import com.github.michaelbull.result.get
 import com.github.michaelbull.result.getError
 import io.andrewohara.tabbychat.contacts.ContactError
 import io.andrewohara.tabbychat.messages.MessageContent
+import io.andrewohara.tabbychat.messages.MessageError
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
@@ -119,6 +120,20 @@ class ServiceIntegrationTest {
         }
         driver(brownUser).acceptInvitation(invite2).also { result ->
             assertThat(result).isEqualTo(Err(ContactError.AlreadyContact))
+        }
+    }
+
+    @Test
+    fun `can send messages to self`() {
+        driver(tabbyUser).sendMessage(tabbyUser, "hai").also { result ->
+            assertThat(result.getError()).isNull()
+        }
+    }
+
+    @Test
+    fun `cannot send messages to user that is not a contact`() {
+        driver(tabbyUser).sendMessage(brownUser, "hai").also { result ->
+            assertThat(result).isEqualTo(Err(MessageError.NotContact))
         }
     }
 }

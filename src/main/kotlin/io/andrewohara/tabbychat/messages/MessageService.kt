@@ -21,16 +21,18 @@ class MessageService(
      * As the sender, send a message, saving a copy for yourself
      */
     fun send(sender: UserId, recipient: UserId, content: MessageContent): Result<Message, MessageError> {
-        val contact = contactsDao[sender, recipient] ?: return Err(MessageError.NotContact(recipient))
+        if (sender != recipient) {
+            val contact = contactsDao[sender, recipient] ?: return Err(MessageError.NotContact)
+            client.sendMessage(contact, content)?.let { return Err(it) }
+        }
 
         val message = Message(
             content = content,
             received = clock.instant(),
             sender = sender
         )
-
         dao.add(sender, message)
-        client.sendMessage(contact, content)?.let { return Err(it) }
+
 
         return Ok(message)
     }
