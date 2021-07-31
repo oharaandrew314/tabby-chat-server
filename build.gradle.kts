@@ -18,8 +18,6 @@ dependencies {
     implementation(kotlin("stdlib"))
     implementation(kotlin("reflect"))
 
-    implementation("com.amazonaws:aws-lambda-java-core:1.2.1")
-    implementation("com.amazonaws:aws-lambda-java-events:3.7.0")
     implementation("com.amazonaws:aws-java-sdk-dynamodb:${Ver.aws}")
     implementation("com.michael-bull.kotlin-result:kotlin-result:1.1.12")
     implementation("org.slf4j:slf4j-api:${Ver.slf4j}")

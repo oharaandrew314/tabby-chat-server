@@ -27,8 +27,7 @@ Resources:
     Type: 'AWS::Serverless::Function'
     Properties:
       Timeout: 10
-      Handler: io.andrewohara.cheetosbros.ApiLambdaHandler
-      MemorySize: 1024
+      Handler: io.andrewohara.tabbychat.ApiLambdaHandler
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref Users

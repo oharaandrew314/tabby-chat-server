@@ -1,16 +1,24 @@
 package io.andrewohara.tabbychat
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder
+import io.andrewohara.lib.DynamoUtils
 import io.andrewohara.tabbychat.auth.AccessToken
 import io.andrewohara.tabbychat.auth.Authorization
 import io.andrewohara.tabbychat.contacts.ContactService
 import io.andrewohara.tabbychat.messages.MessageService
 import io.andrewohara.tabbychat.api.v1.ContactApiV1
 import io.andrewohara.tabbychat.api.v1.ProviderApiV1
+import io.andrewohara.tabbychat.auth.dao.DynamoTokenDao
 import io.andrewohara.tabbychat.auth.dao.TokenDao
 import io.andrewohara.tabbychat.contacts.dao.ContactsDao
+import io.andrewohara.tabbychat.contacts.dao.DynamoContactsDao
+import io.andrewohara.tabbychat.messages.dao.DynamoMessageDao
 import io.andrewohara.tabbychat.messages.dao.MessageDao
 import io.andrewohara.tabbychat.users.UserService
+import io.andrewohara.tabbychat.users.dao.DynamoUserDao
 import io.andrewohara.tabbychat.users.dao.UsersDao
+import org.http4k.client.JavaHttpClient
 import org.http4k.core.*
 import org.http4k.filter.ServerFilters
 import org.http4k.lens.RequestContextKey
@@ -20,7 +28,7 @@ import java.time.Clock
 
 class ServiceFactory(
     clock: Clock,
-    realm: String,
+    val realm: String,
     messagesDao: MessageDao,
     contactsDao: ContactsDao,
     tokensDao: TokenDao,
@@ -91,5 +99,25 @@ class ServiceFactory(
         return ServerFilters.InitialiseRequestContext(contexts)
 //            .then(ServerFilters.Cors(corsPolicy))
             .then(routes)
+    }
+
+    companion object {
+        fun fromEnv(env: Map<String, String>, dynamo: AmazonDynamoDB = AmazonDynamoDBClientBuilder.defaultClient()): ServiceFactory {
+            val realm = env.getValue("REALM")
+            val contactsTableName = env.getValue("CONTACTS_TABLE_NAME")
+            val usersTableName = env.getValue("USERS_TABLE_NAME")
+            val messagesTableName = env.getValue("MESSAGES_TABLE_NAME")
+            val tokensTableName = env.getValue("TOKENS_TABLE_NAME")
+
+            return ServiceFactory(
+                clock = Clock.systemUTC(),
+                realm = realm,
+                clientBackend = JavaHttpClient(),
+                contactsDao = DynamoContactsDao(DynamoUtils.mapper(contactsTableName, dynamo)),
+                usersDao = DynamoUserDao(DynamoUtils.mapper(usersTableName, dynamo)),
+                messagesDao = DynamoMessageDao(DynamoUtils.mapper(messagesTableName, dynamo)),
+                tokensDao = DynamoTokenDao(DynamoUtils.mapper(tokensTableName, dynamo), realm)
+            )
+        }
     }
 }
