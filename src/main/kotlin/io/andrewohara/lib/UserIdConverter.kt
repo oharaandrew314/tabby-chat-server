@@ -1,7 +1,7 @@
 package io.andrewohara.lib
 
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTypeConverter
-import io.andrewohara.brownchat.users.UserId
+import io.andrewohara.tabbychat.users.UserId
 
 class UserIdConverter: DynamoDBTypeConverter<String, UserId> {
     override fun convert(id: UserId) = "${id.realm}:${id.id}"
