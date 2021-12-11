@@ -1,7 +1,0 @@
-version=0.1
-
-[default.deploy.parameters]
-stack_name = "tabbychat-prod"
-s3_bucket = "io.andrewohara.sam"
-region = "ca-central-1"
-capabilities = "CAPABILITY_IAM"

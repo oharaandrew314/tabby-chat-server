@@ -1,35 +1,31 @@
 package io.andrewohara.tabbychat.messages.dao
 
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBQueryExpression
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTableMapper
-import com.amazonaws.services.dynamodbv2.model.AttributeValue
-import com.amazonaws.services.dynamodbv2.model.ComparisonOperator
-import com.amazonaws.services.dynamodbv2.model.Condition
 import io.andrewohara.tabbychat.messages.Message
 import io.andrewohara.tabbychat.users.UserId
+import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable
+import software.amazon.awssdk.enhanced.dynamodb.Key
+import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional
+import software.amazon.awssdk.enhanced.dynamodb.model.QueryEnhancedRequest
 import java.time.Instant
 
-class DynamoMessageDao(private val mapper: DynamoDBTableMapper<DynamoMessage, String, Long>): MessageDao {
+class DynamoMessageDao(private val mapper: DynamoDbTable<DynamoMessage>): MessageDao {
 
     override fun add(owner: UserId, message: Message) {
-        val item = DynamoMessage(owner, message)
-        mapper.save(item)
+        val item = message.toDynamo(owner)
+        mapper.putItem(item)
     }
 
     override fun list(user: UserId, start: Instant, end: Instant): List<Message> {
-        val between = Condition()
-            .withComparisonOperator(ComparisonOperator.BETWEEN)
-            .withAttributeValueList(
-                AttributeValue().withN(start.toEpochMilli().toString()),
-                AttributeValue().withN(end.toEpochMilli().toString())
-            )
+        val condition = QueryConditional.sortBetween(
+            Key.builder().partitionValue(user.toString()).sortValue(start.toString()).build(),
+            Key.builder().partitionValue(user.toString()).sortValue(end.toString()).build()
+        )
 
-        val expression = DynamoDBQueryExpression<DynamoMessage>()
-            .withHashKeyValues(DynamoMessage(owner = user))
-            .withScanIndexForward(true)
-            .withRangeKeyCondition("id", between)
-
-        return mapper.query(expression).map { it.toMessage() }
+        return mapper.query { builder: QueryEnhancedRequest.Builder ->
+            builder.scanIndexForward(true)
+            builder.queryConditional(condition)
+        }.items()
+            .map { it.toMessage() }
     }
 }
 

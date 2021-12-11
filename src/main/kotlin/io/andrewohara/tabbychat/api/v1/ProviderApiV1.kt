@@ -1,6 +1,8 @@
 package io.andrewohara.tabbychat.api.v1
 
-import com.github.michaelbull.result.mapBoth
+import dev.forkhandles.result4k.get
+import dev.forkhandles.result4k.map
+import dev.forkhandles.result4k.mapFailure
 import io.andrewohara.tabbychat.auth.Authorization
 import io.andrewohara.tabbychat.contacts.ContactService
 import io.andrewohara.tabbychat.messages.MessageService
@@ -15,6 +17,7 @@ import org.http4k.lens.instant
  * Handles requests from registered users
  */
 class ProviderApiV1(
+    private val realm: String,
     private val authLens: RequestContextLens<Authorization>,
     private val messageService: MessageService,
     private val contactServices: ContactService
@@ -41,10 +44,10 @@ class ProviderApiV1(
         val auth = authLens(request) as? Authorization.Owner ?: return wrongAuthType
         val invitation = mapper(V1Lenses.accessToken(request))
 
-        return contactServices.acceptInvitation(auth.owner, invitation).mapBoth(
-            success = { Response(OK) },
-            failure = { it.toResponse() }
-        )
+        return contactServices.acceptInvitation(auth.owner, invitation)
+            .map { Response(OK) }
+            .mapFailure { it.toResponse() }
+            .get()
     }
 
     fun listMessages(request: Request): Response {
@@ -62,9 +65,18 @@ class ProviderApiV1(
         val auth = authLens(request) as? Authorization.Owner ?: return wrongAuthType
         val (recipient, content) = mapper(V1Lenses.sendMessageRequest(request))
 
-        return messageService.send(auth.owner, recipient, content).mapBoth(
-            success = { Response(OK) },
-            failure = { TODO() }
+        return messageService.send(auth.owner, recipient, content)
+            .map { Response(OK) }
+            .mapFailure { TODO() }
+            .get()
+    }
+
+    fun spec(request: Request): Response {
+        val spec = SpecDtoV1(
+            realm = realm,
+            version = 1
         )
+
+        return Response(OK).with(V1Lenses.spec of spec)
     }
 }

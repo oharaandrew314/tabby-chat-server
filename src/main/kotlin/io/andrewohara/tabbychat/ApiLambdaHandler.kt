@@ -1,11 +1,9 @@
 package io.andrewohara.tabbychat
 
-import org.http4k.core.HttpHandler
 import org.http4k.serverless.ApiGatewayV2LambdaFunction
+import org.http4k.serverless.AppLoader
 
-val appLoader: (Map<String, String>) -> HttpHandler = { env ->
+class ApiLambdaHandler: ApiGatewayV2LambdaFunction(AppLoader { env ->
     val service = ServiceFactory.fromEnv(env)
     service.createHttp()
-}
-
-class ApiLambdaHandler: ApiGatewayV2LambdaFunction(appLoader)
+})

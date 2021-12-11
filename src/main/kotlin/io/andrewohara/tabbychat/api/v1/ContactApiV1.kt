@@ -1,6 +1,8 @@
 package io.andrewohara.tabbychat.api.v1
 
-import com.github.michaelbull.result.mapBoth
+import dev.forkhandles.result4k.get
+import dev.forkhandles.result4k.map
+import dev.forkhandles.result4k.mapFailure
 import io.andrewohara.tabbychat.auth.Authorization
 import io.andrewohara.tabbychat.contacts.ContactService
 import io.andrewohara.tabbychat.messages.MessageService
@@ -32,10 +34,10 @@ class ContactApiV1(
         val auth = authLens(request) as? Authorization.Invite ?: return wrongAuthType
         val accessToken = mapper(V1Lenses.accessToken(request))
 
-        return contactService.completeInvitation(auth.owner, auth.invitation, accessToken).mapBoth(
-            success = { Response(Status.OK).with(V1Lenses.accessToken of mapper(it)) },
-            failure = { it.toResponse() }
-        )
+        return contactService.completeInvitation(auth.owner, auth.invitation, accessToken)
+            .map {  Response(Status.OK).with(V1Lenses.accessToken of mapper(it)) }
+            .mapFailure { it.toResponse() }
+            .get()
     }
 
     fun receiveMessage(request: Request): Response {
@@ -57,6 +59,6 @@ class ContactApiV1(
         val user = userService[userId] ?: return Response(Status.NOT_FOUND)
 
         return Response(Status.OK)
-            .with(V1Lenses.userLens of mapper(user))
+            .with(V1Lenses.user of mapper(user))
     }
 }

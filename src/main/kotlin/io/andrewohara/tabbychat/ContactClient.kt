@@ -1,8 +1,5 @@
 package io.andrewohara.tabbychat
 
-import com.github.michaelbull.result.Err
-import com.github.michaelbull.result.Ok
-import com.github.michaelbull.result.Result
 import io.andrewohara.tabbychat.auth.AccessToken
 import io.andrewohara.tabbychat.contacts.ContactError
 import io.andrewohara.tabbychat.contacts.Contact
@@ -15,6 +12,9 @@ import io.andrewohara.tabbychat.users.User
 import org.http4k.core.*
 import org.http4k.filter.ClientFilters
 import java.io.IOException
+import dev.forkhandles.result4k.Result
+import dev.forkhandles.result4k.Success
+import io.andrewohara.tabbychat.contacts.err
 
 class ContactClient(private val backend: HttpHandler) {
 
@@ -33,9 +33,9 @@ class ContactClient(private val backend: HttpHandler) {
 
         val response = withProvider(invitation)(request)
         return when(response.status) {
-            Status.OK -> Ok(mapper(V1Lenses.accessToken(response)))
-            Status.CONFLICT -> Err(ContactError.AlreadyContact)
-            Status.UNAUTHORIZED -> Err(ContactError.InvitationRejected)
+            Status.OK -> Success(mapper(V1Lenses.accessToken(response)))
+            Status.CONFLICT -> ContactError.AlreadyContact.err()
+            Status.UNAUTHORIZED -> ContactError.InvitationRejected.err()
             Status.BAD_REQUEST -> throw IOException("invalid acceptance")
             else -> throw IOException("Error accepting invitation: ")
         }
@@ -58,9 +58,9 @@ class ContactClient(private val backend: HttpHandler) {
 
         val response = withProvider(token)(request)
         return when(response.status) {
-            Status.OK -> Ok(mapper(V1Lenses.userLens(response)))
-            Status.UNAUTHORIZED -> Err(ContactError.InvitationRejected)  // TODO proper error?
-            Status.FORBIDDEN -> Err(ContactError.InvitationRejected)  // TODO proper error?
+            Status.OK -> Success(mapper(V1Lenses.user(response)))
+            Status.UNAUTHORIZED -> ContactError.InvitationRejected.err()  // TODO proper error?
+            Status.FORBIDDEN -> ContactError.InvitationRejected.err()  // TODO proper error?
             else -> throw IOException("Error looking up user for $token: ${response.status}")
         }
     }

@@ -1,13 +1,12 @@
 package io.andrewohara.tabbychat
 
-import com.github.michaelbull.result.*
+import dev.mrbergin.kotest.result4k.shouldBeSuccess
 import io.andrewohara.tabbychat.users.UserId
 import io.andrewohara.lib.IncrementOnGetClock
 import org.http4k.core.HttpHandler
 import org.http4k.core.Request
 import org.http4k.core.Response
 import org.http4k.core.Status
-import java.lang.RuntimeException
 
 class TestDriver: HttpHandler {
 
@@ -26,11 +25,10 @@ class TestDriver: HttpHandler {
        return service
    }
 
-    operator fun invoke(userId: UserId) = getServiceClient(userId)
-
     private fun getService(userId: UserId) = services.first { it.realm == userId.realm }
     private fun getServiceClient(userId: UserId) = getService(userId)(userId)
 
+    operator fun invoke(userId: UserId) = getServiceClient(userId)
     override fun invoke(request: Request): Response {
         val service = serviceLookup(request) ?: return Response(Status.SERVICE_UNAVAILABLE)
         return service(request)
@@ -39,11 +37,8 @@ class TestDriver: HttpHandler {
     fun listContactIds(userId: UserId) = getService(userId).listContactIds(userId)
     fun listMessages(userId: UserId) = getService(userId).listMessages(userId, startTime, clock.instant())
 
-    fun givenContacts(user1: UserId, user2: UserId) {
+    fun givenContacts(user1: UserId, user2: UserId) {  // TODO work with dao level instead to bypass checks and requirements
         val invitation = invoke(user1).createInvitation()
-        val result = invoke(user2).acceptInvitation(invitation)
-        result.getError()?.let { error ->
-            throw RuntimeException(error.toString())
-        }
+        invoke(user2).acceptInvitation(invitation) shouldBeSuccess Unit
     }
 }

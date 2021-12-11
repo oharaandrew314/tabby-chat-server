@@ -1,7 +1,8 @@
 package io.andrewohara.tabbychat
 
-import com.amazonaws.services.dynamodbv2.model.ProvisionedThroughput
-import io.andrewohara.awsmock.dynamodb.MockAmazonDynamoDB
+import io.andrewohara.awsmock.dynamodb.MockDynamoDbV2
+import io.andrewohara.awsmock.dynamodb.backend.MockDynamoBackend
+import io.andrewohara.dynamokt.DataClassTableSchema
 import io.andrewohara.tabbychat.auth.dao.DynamoToken
 import io.andrewohara.tabbychat.auth.dao.DynamoTokenDao
 import io.andrewohara.tabbychat.contacts.dao.DynamoContact
@@ -11,34 +12,40 @@ import io.andrewohara.tabbychat.messages.dao.DynamoMessageDao
 import io.andrewohara.tabbychat.users.UserId
 import io.andrewohara.tabbychat.users.dao.DynamoUser
 import io.andrewohara.tabbychat.users.dao.DynamoUserDao
-import io.andrewohara.lib.DynamoUtils
 import org.http4k.core.HttpHandler
 import org.http4k.core.Request
+import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient
 import java.time.Clock
 import java.time.Instant
 
 class FakeService(val realm: String, clock: Clock, clientBackend: HttpHandler): HttpHandler {
 
-    private val dynamo = MockAmazonDynamoDB()
+    private val dynamo = DynamoDbEnhancedClient.builder()
+        .dynamoDbClient(MockDynamoDbV2(MockDynamoBackend(clock)))
+        .build()
 
     private val services = ServiceFactory(
         clock = clock,
         realm = realm,
-        messagesDao = DynamoUtils.mapper<DynamoMessage, String, Long>("messages", dynamo).let {
-            it.createTable(ProvisionedThroughput(1, 1))
-            DynamoMessageDao(it)
+        messagesDao = let {
+            val table = dynamo.table("messages", DataClassTableSchema(DynamoMessage::class))
+            table.createTable()
+            DynamoMessageDao(table)
         },
-        contactsDao = DynamoUtils.mapper<DynamoContact, UserId, UserId>("contacts", dynamo).let {
-            it.createTable(ProvisionedThroughput(1, 1))
-            DynamoContactsDao(it)
+        contactsDao = let {
+            val table = dynamo.table("contacts", DataClassTableSchema(DynamoContact::class))
+            table.createTable()
+            DynamoContactsDao(table)
         },
-        tokensDao = DynamoUtils.mapper<DynamoToken, String, Unit>("tokens", dynamo).let {
-            it.createTable(ProvisionedThroughput(1, 1))
-            DynamoTokenDao(it, realm)
+        tokensDao = let {
+            val table = dynamo.table("tokens", DataClassTableSchema(DynamoToken::class))
+            table.createTable()
+            DynamoTokenDao(table, realm)
         },
-        usersDao = DynamoUtils.mapper<DynamoUser, UserId, Unit>("users", dynamo).let {
-            it.createTable(ProvisionedThroughput(1, 1))
-            DynamoUserDao(it)
+        usersDao = let {
+            val table = dynamo.table("users", DataClassTableSchema(DynamoUser::class))
+            table.createTable()
+            DynamoUserDao(table)
         },
         clientBackend = clientBackend
     )

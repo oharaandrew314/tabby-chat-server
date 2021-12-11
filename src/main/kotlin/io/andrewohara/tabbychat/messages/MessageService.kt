@@ -1,8 +1,8 @@
 package io.andrewohara.tabbychat.messages
 
-import com.github.michaelbull.result.Err
-import com.github.michaelbull.result.Ok
-import com.github.michaelbull.result.Result
+import dev.forkhandles.result4k.Failure
+import dev.forkhandles.result4k.Result
+import dev.forkhandles.result4k.Success
 import io.andrewohara.tabbychat.ContactClient
 import io.andrewohara.tabbychat.contacts.dao.ContactsDao
 import io.andrewohara.tabbychat.messages.dao.MessageDao
@@ -22,8 +22,8 @@ class MessageService(
      */
     fun send(sender: UserId, recipient: UserId, content: MessageContent): Result<Message, MessageError> {
         if (sender != recipient) {
-            val contact = contactsDao[sender, recipient] ?: return Err(MessageError.NotContact)
-            client.sendMessage(contact, content)?.let { return Err(it) }
+            val contact = contactsDao[sender, recipient] ?: return MessageError.NotContact.err()
+            client.sendMessage(contact, content)?.let { return Failure(it) }
         }
 
         val message = Message(
@@ -34,7 +34,7 @@ class MessageService(
         dao.add(sender, message)
 
 
-        return Ok(message)
+        return Success(message)
     }
 
     /**

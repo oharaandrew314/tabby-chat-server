@@ -1,29 +1,29 @@
 package io.andrewohara.tabbychat.contacts.dao
 
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBQueryExpression
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTableMapper
 import io.andrewohara.tabbychat.contacts.Contact
+import io.andrewohara.tabbychat.lib.dao.toKey
 import io.andrewohara.tabbychat.users.UserId
+import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable
+import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional
 
-class DynamoContactsDao(private val mapper: DynamoDBTableMapper<DynamoContact, UserId, UserId>): ContactsDao {
+class DynamoContactsDao(private val mapper: DynamoDbTable<DynamoContact>): ContactsDao {
 
     override fun save(owner: UserId, contact: Contact) {
-        val item = DynamoContact(owner, contact)
-        mapper.save(item)
+        val item = contact.toDynamo(owner)
+        mapper.putItem(item)
     }
 
     override fun list(owner: UserId): List<Contact> {
-        val query = DynamoDBQueryExpression<DynamoContact>()
-            .withHashKeyValues(DynamoContact(owner = owner))
-
-        return mapper.query(query).map { it.toContact() }
+        return mapper.query(QueryConditional.keyEqualTo(owner.toKey()))
+            .items()
+            .map { it.toContact() }
     }
 
     override fun get(owner: UserId, contact: UserId): Contact? {
-        return mapper.load(owner, contact)?.toContact()
+        return mapper.getItem(owner.toKey(contact))?.toContact()
     }
 
     override fun delete(owner: UserId, contact: UserId) {
-        mapper.delete(DynamoContact(owner = owner, id = contact))
+        mapper.deleteItem(owner.toKey(contact))
     }
 }

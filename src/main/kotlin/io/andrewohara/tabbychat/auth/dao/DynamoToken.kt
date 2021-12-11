@@ -1,30 +1,26 @@
 package io.andrewohara.tabbychat.auth.dao
 
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBDocument
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBHashKey
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTypeConverted
+import io.andrewohara.dynamokt.DynamoKtConverted
+import io.andrewohara.dynamokt.DynamoKtPartitionKey
+import io.andrewohara.tabbychat.lib.dao.UserIdConverter
 import io.andrewohara.tabbychat.users.UserId
-import io.andrewohara.lib.EpochInstantConverter
-import io.andrewohara.lib.UserIdConverter
 import java.time.Instant
 
-@DynamoDBDocument
 data class DynamoToken(
-    @DynamoDBHashKey
-    var value: String? = null,
+    @DynamoKtPartitionKey
+    val value: String,
 
-    var type: String? = null,
+    val type: String,
 
-    @DynamoDBTypeConverted(converter = UserIdConverter::class)
-    var owner: UserId? = null,
+    @DynamoKtConverted(UserIdConverter::class)
+    val owner: UserId,
 
-    @DynamoDBTypeConverted(converter = UserIdConverter::class)
-    var contact: UserId? = null,
+    @DynamoKtConverted(UserIdConverter::class)
+    val contact: UserId?,
 
-    @DynamoDBTypeConverted(converter = EpochInstantConverter::class)
-    var expires: Instant? = null
-) {
-    fun isExpired(time: Instant) = expires
-        ?.let { expiry -> expiry <= time }
-        ?: false
+    val expires: Long?
+)
+
+fun DynamoToken.isExpired(time: Instant) = if (expires == null) false else {
+    expires <= time.epochSecond
 }

@@ -8,5 +8,6 @@ object V1Lenses {
     val messageList = Body.auto<Array<MessageDtoV1>>().toLens()
     val accessToken = Body.auto<AccessTokenDtoV1>().toLens()
     val sendMessageRequest = Body.auto<SendMessageRequestV1>().toLens()
-    val userLens = Body.auto<UserDtoV1>().toLens()
+    val user = Body.auto<UserDtoV1>().toLens()
+    val spec = Body.auto<SpecDtoV1>().toLens()
 }

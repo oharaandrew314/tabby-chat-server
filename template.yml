@@ -1,11 +1,17 @@
 Transform: AWS::Serverless-2016-10-31
 
+Parameters:
+  Realm:
+    Type: String
+    Description: DNS name of the api (e.g. tabbychat-api.andrewohara.io)
+
 Globals:
   Function:
     Runtime: java11
     MemorySize: 2048
     Environment:
       Variables:
+        REALM: !Ref Realm
         USERS_TABLE_NAME: !Ref Users
         CONTACTS_TABLE_NAME: !Ref Contacts
         MESSAGES_TABLE_NAME: !Ref Messages

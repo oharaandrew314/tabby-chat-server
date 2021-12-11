@@ -1,5 +1,5 @@
 plugins {
-    kotlin("jvm") version "1.5.21"
+    kotlin("jvm") version "1.6.0"
 }
 
 repositories {
@@ -7,29 +7,30 @@ repositories {
     maven { url = uri("https://jitpack.io") }
 }
 
-
-object Ver {
-    const val aws = "1.12.36"
-    const val slf4j = "1.7.31"
-    const val http4k = "4.10.1.0"
-}
-
 dependencies {
     implementation(kotlin("stdlib"))
     implementation(kotlin("reflect"))
 
-    implementation("com.amazonaws:aws-java-sdk-dynamodb:${Ver.aws}")
-    implementation("com.michael-bull.kotlin-result:kotlin-result:1.1.12")
-    implementation("org.slf4j:slf4j-api:${Ver.slf4j}")
-    runtimeOnly("org.slf4j:slf4j-simple:${Ver.slf4j}")
-    implementation("org.http4k:http4k-core:${Ver.http4k}")
-    implementation("org.http4k:http4k-serverless-lambda:${Ver.http4k}")
-    implementation("org.http4k:http4k-format-jackson:${Ver.http4k}")
+    implementation(platform("org.http4k:http4k-bom:4.17.3.0"))
+    implementation(platform("io.kotest:kotest-bom:5.0.2"))
+    implementation(platform("software.amazon.awssdk:bom:2.17.99"))
+    implementation(platform("dev.forkhandles:forkhandles-bom:1.13.0.0"))
+
+    implementation("dev.forkhandles:result4k")
+    implementation("org.slf4j:slf4j-simple:1.7.31")
+    implementation("org.http4k:http4k-core")
+    implementation("org.http4k:http4k-serverless-lambda")
+    implementation("org.http4k:http4k-format-jackson")
+    implementation("software.amazon.awssdk:dynamodb-enhanced")
+    implementation("com.github.oharaandrew314:service-utils:0.4.0")
+    implementation("com.github.oharaandrew314:dynamodb-kotlin-module:0.1.0-beta.3")
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.7.2")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
-    testImplementation("org.assertj:assertj-core:3.16.1")
-    testImplementation("com.github.oharaandrew314:mock-aws-java-sdk:0.5.0")
+    testImplementation("com.github.oharaandrew314:mock-aws-java-sdk:1.0.0-beta.3")
+    testImplementation("io.kotest:kotest-runner-junit5")
+    testImplementation("org.http4k:http4k-testing-kotest")
+    testImplementation("dev.mrbergin:result4k-kotest-matchers:0.0.3")
 }
 
 tasks.test {

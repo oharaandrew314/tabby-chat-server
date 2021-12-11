@@ -1,13 +1,12 @@
 package io.andrewohara.tabbychat
 
-import com.github.michaelbull.result.Err
-import com.github.michaelbull.result.Ok
-import com.github.michaelbull.result.get
-import com.github.michaelbull.result.getError
+import dev.mrbergin.kotest.result4k.shouldBeFailure
+import dev.mrbergin.kotest.result4k.shouldBeSuccess
 import io.andrewohara.tabbychat.contacts.ContactError
 import io.andrewohara.tabbychat.messages.MessageContent
 import io.andrewohara.tabbychat.messages.MessageError
-import org.assertj.core.api.Assertions.assertThat
+import io.kotest.matchers.collections.shouldContainExactly
+import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Test
 
 class ServiceIntegrationTest {
@@ -27,26 +26,21 @@ class ServiceIntegrationTest {
     fun `send messages between two users of same service`() {
         val invitation = tabbyChat(tabbyUser).createInvitation()
 
-        driver(tabbyUser2).acceptInvitation(invitation).also { result ->
-            assertThat(result).isEqualTo(Ok(null))
-            assertThat(driver.listContactIds(tabbyUser)).containsExactly(tabbyUser2)
-            assertThat(driver.listContactIds(tabbyUser2)).containsExactly(tabbyUser)
-        }
+        driver(tabbyUser2).acceptInvitation(invitation) shouldBeSuccess Unit
+        driver.listContactIds(tabbyUser).shouldContainExactly(tabbyUser2)
+        driver.listContactIds(tabbyUser2).shouldContainExactly(tabbyUser)
 
         // invited user can send messages to inviter
-        driver(tabbyUser2).sendMessage(tabbyUser, "hai!").also { result ->
-            assertThat(result.getError()).isNull()
-            val message = result.get()!!
-            assertThat(message.sender).isEqualTo(tabbyUser2)
-            assertThat(message.content).isEqualTo(MessageContent(text = "hai!"))
+
+        driver(tabbyUser2).sendMessage(tabbyUser, "hai!").shouldBeSuccess { message ->
+            message.sender shouldBe tabbyUser2
+            message.content shouldBe MessageContent(text = "hai!")
         }
 
         // inviter can send messages to invited
-        driver(tabbyUser).sendMessage(tabbyUser2, "sup").also { result ->
-            assertThat(result.getError()).isNull()
-            val message = result.get()!!
-            assertThat(message.sender).isEqualTo(tabbyUser)
-            assertThat(message.content).isEqualTo(MessageContent(text = "sup"))
+        driver(tabbyUser).sendMessage(tabbyUser2, "sup").shouldBeSuccess { message ->
+            message.sender shouldBe tabbyUser
+            message.content shouldBe MessageContent(text = "sup")
         }
     }
 
@@ -54,26 +48,20 @@ class ServiceIntegrationTest {
     fun `send messages between two users of different services`() {
         val invitation = tabbyChat(tabbyUser).createInvitation()
 
-        driver(brownUser).acceptInvitation(invitation).also { result ->
-            assertThat(result).isEqualTo(Ok(null))
-            assertThat(driver.listContactIds(brownUser)).containsExactly(tabbyUser)
-            assertThat(driver.listContactIds(tabbyUser)).containsExactly(brownUser)
-        }
+        driver(brownUser).acceptInvitation(invitation) shouldBeSuccess Unit
+        driver.listContactIds(brownUser).shouldContainExactly(tabbyUser)
+        driver.listContactIds(tabbyUser).shouldContainExactly(brownUser)
 
         // invited user can send messages to inviter
-        driver(brownUser).sendMessage(tabbyUser, "hai!").also { result ->
-            assertThat(result.getError()).isNull()
-            val message = result.get()!!
-            assertThat(message.sender).isEqualTo(brownUser)
-            assertThat(message.content).isEqualTo(MessageContent(text = "hai!"))
+        driver(brownUser).sendMessage(tabbyUser, "hai!").shouldBeSuccess { message ->
+            message.sender shouldBe  brownUser
+            message.content shouldBe MessageContent(text = "hai!")
         }
 
         // inviter can send messages to invited
-        driver(tabbyUser).sendMessage(brownUser, "sup").also { result ->
-            assertThat(result.getError()).isNull()
-            val message = result.get()!!
-            assertThat(message.sender).isEqualTo(tabbyUser)
-            assertThat(message.content).isEqualTo(MessageContent(text = "sup"))
+        driver(tabbyUser).sendMessage(brownUser, "sup").shouldBeSuccess { message ->
+            message.sender shouldBe tabbyUser
+            message.content shouldBe MessageContent(text = "sup")
         }
     }
 
@@ -81,18 +69,14 @@ class ServiceIntegrationTest {
     fun `send message between two users - both have copies of all messages`() {
         driver.givenContacts(brownUser, tabbyUser)
 
-        driver(brownUser).sendMessage(tabbyUser, "hai").also { result ->
-            assertThat(result.getError()).isNull()
-        }
-        driver(tabbyUser).sendMessage(brownUser, "sup").also { result ->
-            assertThat(result.getError()).isNull()
-        }
+        driver(brownUser).sendMessage(tabbyUser, "hai").shouldBeSuccess()
+        driver(tabbyUser).sendMessage(brownUser, "sup").shouldBeSuccess()
 
-        assertThat(driver.listMessages(brownUser).map { it.sender to it.content.text }).containsExactly(
+        driver.listMessages(brownUser).map { it.sender to it.content.text }.shouldContainExactly(
             brownUser to "hai",
             tabbyUser to "sup"
         )
-        assertThat(driver.listMessages(tabbyUser).map { it.sender to it.content.text }).containsExactly(
+        driver.listMessages(tabbyUser).map { it.sender to it.content.text }.shouldContainExactly(
             brownUser to "hai",
             tabbyUser to "sup"
         )
@@ -102,12 +86,8 @@ class ServiceIntegrationTest {
     fun `cannot accept same invitation by multiple users`() {
         val invitation = tabbyChat(tabbyUser).createInvitation()
 
-        driver(brownUser).acceptInvitation(invitation).also { result ->
-            assertThat(result).isEqualTo(Ok(null))
-        }
-        driver(brownUser2).acceptInvitation(invitation).also { result ->
-            assertThat(result).isEqualTo(Err(ContactError.InvitationRejected))
-        }
+        driver(brownUser).acceptInvitation(invitation) shouldBeSuccess Unit
+        driver(brownUser2).acceptInvitation(invitation) shouldBeFailure ContactError.InvitationRejected
     }
 
     @Test
@@ -115,25 +95,17 @@ class ServiceIntegrationTest {
         val invite1 = tabbyChat(tabbyUser).createInvitation()
         val invite2 = tabbyChat(tabbyUser).createInvitation()
 
-        driver(brownUser).acceptInvitation(invite1).also { result ->
-            assertThat(result).isEqualTo(Ok(null))
-        }
-        driver(brownUser).acceptInvitation(invite2).also { result ->
-            assertThat(result).isEqualTo(Err(ContactError.AlreadyContact))
-        }
+        driver(brownUser).acceptInvitation(invite1) shouldBeSuccess Unit
+        driver(brownUser).acceptInvitation(invite2) shouldBeFailure ContactError.AlreadyContact
     }
 
     @Test
     fun `can send messages to self`() {
-        driver(tabbyUser).sendMessage(tabbyUser, "hai").also { result ->
-            assertThat(result.getError()).isNull()
-        }
+        driver(tabbyUser).sendMessage(tabbyUser, "hai").shouldBeSuccess()
     }
 
     @Test
     fun `cannot send messages to user that is not a contact`() {
-        driver(tabbyUser).sendMessage(brownUser, "hai").also { result ->
-            assertThat(result).isEqualTo(Err(MessageError.NotContact))
-        }
+        driver(tabbyUser).sendMessage(brownUser, "hai") shouldBeFailure MessageError.NotContact
     }
 }

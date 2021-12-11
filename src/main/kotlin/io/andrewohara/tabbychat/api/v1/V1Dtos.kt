@@ -34,11 +34,6 @@ data class MessageDtoV1(
 data class MessageContentDtoV1(
     val text: String?
 )
-//
-//data class ContactDtoV1(
-//    val userId: UserIdDtoV1,
-//    val token: AccessTokenDtoV1,
-//)
 
 data class AccessTokenDtoV1(
     val realm: String,
@@ -50,16 +45,12 @@ data class SendMessageRequestV1(
     val content: MessageContentDtoV1,
 )
 
-class V1DtoMapper {
+data class SpecDtoV1(
+    val realm: String,
+    val version: Int
+)
 
-//    operator fun invoke(contact: ContactDtoV1) = Contact(
-//        userId = invoke(contact.userId),
-//        token = invoke(contact.token)
-//    )
-//    operator fun invoke(contact: Contact) = ContactDtoV1(
-//        token = invoke(contact.token),
-//        userId = invoke(contact.userId),
-//    )
+class V1DtoMapper {
 
     operator fun invoke(user: User) = UserDtoV1(
         id = invoke(user.id),

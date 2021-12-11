@@ -1,6 +1,6 @@
 package io.andrewohara.tabbychat.contacts
 
-import com.github.michaelbull.result.*
+import dev.forkhandles.result4k.*
 import io.andrewohara.tabbychat.ContactClient
 import io.andrewohara.tabbychat.auth.AccessToken
 import io.andrewohara.tabbychat.auth.dao.TokenDao
@@ -27,42 +27,43 @@ class ContactService(
     /**
      * As the user who received an invitation, accept it and add the inviter as a contact.
      */
-    fun acceptInvitation(self: UserId, invitation: AccessToken): Result<Unit?, ContactError> {
-        val inviterId = client.getUser(invitation).getOrElse { return Err(it) }.id
+    fun acceptInvitation(self: UserId, invitation: AccessToken): Result<Unit, ContactError> {
+        val inviter = client.getUser(invitation)
+            .onFailure { return it }
 
-        if (contactsDao[self, inviterId] != null) return Err(ContactError.AlreadyContact)
+        if (contactsDao[self, inviter.id] != null) return ContactError.AlreadyContact.err()
 
-        val selfToken = tokensDao.generateContactToken(owner = self, contact = inviterId)
+        val selfToken = tokensDao.generateContactToken(owner = self, contact = inviter.id)
         val inviterToken = client.completeInvitation(invitation, selfToken)
-            .getOrElse { return Err(it) }
+            .onFailure { return it }
 
         // test inviter token (and reject the one you gave if it doesn't work)
         client.getUser(inviterToken)
-            .map { if (it.id == inviterId) it else Err(ContactError.InvitationRejected) }  // TODO come up with better error code
-            .getOrElse {
+            .map { if (it.id == inviter.id) it else ContactError.InvitationRejected.err() }  // TODO come up with better error code
+            .onFailure {
                 tokensDao.revoke(selfToken)
-                return Err(it)
+                return it
             }
 
-        contactsDao.save(self, Contact(inviterId, inviterToken))
+        contactsDao.save(self, Contact(inviter.id, inviterToken))
 
-        return Ok(null)
+        return Success(Unit)
     }
 
     /**
      * As the user who sent an invitation, add the accepting user as a contact, and return your own access token
      */
     fun completeInvitation(self: UserId, invitation: AccessToken, contactToken: AccessToken): Result<AccessToken, ContactError> {
-        val contactId = client.getUser(contactToken)
-            .getOrElse { return Err(it) }
-            .id
+        val contact = client.getUser(contactToken)
+            .onFailure { return it }
 
-        contactsDao.save(self, Contact(userId = contactId, token = contactToken))
+        contactsDao.save(self, Contact(userId = contact.id, token = contactToken))
         tokensDao.revoke(invitation)
 
         // allow contact to send messages to self
-        val token = tokensDao.generateContactToken(owner = self, contact = contactId)
-        return Ok(token)
+        val token = tokensDao.generateContactToken(owner = self, contact = contact.id)
+
+        return Success(token)
     }
 
     fun listContacts(owner: UserId): List<Contact> {
