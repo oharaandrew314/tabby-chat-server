@@ -9,7 +9,7 @@ import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryEnhancedRequest
 import java.time.Instant
 
-class MessageDao(private val mapper: DynamoDbTable<DynamoMessage>): Iterable<Message> {
+class MessagesDao(private val mapper: DynamoDbTable<DynamoMessage>): Iterable<Message> {
 
     fun add(owner: UserId, message: Message) {
         val item = message.toDynamo(owner)
@@ -28,7 +28,7 @@ class MessageDao(private val mapper: DynamoDbTable<DynamoMessage>): Iterable<Mes
 
         return MessagePage(
             messages = messages.take(limit).map { it.toMessage() },
-            nextTime = messages.lastOrNull()?.received
+            nextTime = if (messages.size > limit) messages.last().received else null
         )
     }
 

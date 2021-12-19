@@ -27,7 +27,7 @@ class UserApiV1(
         const val contactsPath = "/client/v1/contacts"
         val contactPath = contactsPath / V1Lenses.userId
         val contactMessagesPath = contactPath / "messages"
-        const val messagesPath = "/client//v1/messages"
+        const val messagesPath = "/client/v1/messages"
         const val invitationsPath = "/client/v1/invitations"
     }
 

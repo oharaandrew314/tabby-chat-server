@@ -3,8 +3,6 @@ package io.andrewohara.tabbychat.protocol.v1.client
 import dev.forkhandles.result4k.Result
 import dev.forkhandles.result4k.Success
 import io.andrewohara.tabbychat.TabbyChatError
-import io.andrewohara.tabbychat.auth.AccessToken
-import io.andrewohara.tabbychat.auth.Realm
 import io.andrewohara.tabbychat.contacts.TokenData
 import io.andrewohara.tabbychat.messages.MessageContent
 import io.andrewohara.tabbychat.messages.MessagePage
@@ -18,13 +16,11 @@ import org.http4k.core.*
 import org.http4k.filter.ClientFilters
 import java.time.Instant
 
-fun interface UserClientFactoryV1: (Realm, AccessToken) -> UserClientV1 {
+class UserClientFactoryV1(private val backend: HttpHandler): (TokenData) -> UserClientV1 {
 
-    fun backend(realm: Realm): HttpHandler
-
-    override fun invoke(realm: Realm, accessToken: AccessToken): UserClientV1 {
-        val client = ClientFilters.BearerAuth(accessToken.value)
-            .then(backend(realm))
+    override fun invoke(tokenData: TokenData): UserClientV1 {
+        val client = ClientFilters.BearerAuth(tokenData.token.value)
+            .then(backend)
 
         return UserClientV1(client)
     }
@@ -51,9 +47,9 @@ class UserClientV1(private val backend: HttpHandler) {
         return Success(V1Lenses.user(response))
     }
 
-    fun deleteContact(userId: UserId): Result<Unit, TabbyChatError> {
+    fun deleteContact(contactId: UserId): Result<Unit, TabbyChatError> {
         val response = Request(Method.DELETE, "${UserApiV1.contactsPath}/${V1Lenses.userId}")
-            .with(V1Lenses.userId of userId)
+            .with(V1Lenses.userId of contactId)
             .let(backend)
 
         if (!response.status.successful) return response.toError().err()
@@ -72,7 +68,7 @@ class UserClientV1(private val backend: HttpHandler) {
     }
 
     fun createInvitation(): Result<TokenData, TabbyChatError> {
-        val response = Request(Method.POST, UserApiV1.invitationsPath)
+        val response = Request(Method.GET, UserApiV1.invitationsPath)
             .let(backend)
 
         if (!response.status.successful) return response.toError().err()

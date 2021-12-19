@@ -7,7 +7,7 @@ import io.andrewohara.tabbychat.auth.*
 import io.andrewohara.tabbychat.auth.dao.DynamoToken
 import io.andrewohara.tabbychat.auth.dao.TokensDao
 import io.andrewohara.tabbychat.messages.dao.DynamoMessage
-import io.andrewohara.tabbychat.messages.dao.MessageDao
+import io.andrewohara.tabbychat.messages.dao.MessagesDao
 import io.andrewohara.tabbychat.protocol.v1.client.P2PClientV1Factory
 import io.andrewohara.tabbychat.users.UserId
 import io.andrewohara.tabbychat.users.dao.DynamoUser
@@ -38,7 +38,7 @@ class TabbyChatProvider(
     invitationDuration: Duration = Duration.ofHours(12)
 ): HttpHandler {
 
-    val messagesDao = MessageDao(messagesTable)
+    val messagesDao = MessagesDao(messagesTable)
     val tokensDao = TokensDao(tokensTable)
     val usersDao = UsersDao(usersTable)
 

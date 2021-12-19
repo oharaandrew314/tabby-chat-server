@@ -24,7 +24,7 @@ dependencies {
     implementation("org.http4k:http4k-format-moshi")
     implementation("org.http4k:http4k-format-jackson")
     implementation("software.amazon.awssdk:dynamodb-enhanced")
-    implementation("com.github.oharaandrew314:service-utils:0.4.0")
+    implementation("com.github.oharaandrew314:service-utils:0.5.0")
     implementation("com.github.oharaandrew314:dynamodb-kotlin-module:0.1.0-beta.3")
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.8.2")

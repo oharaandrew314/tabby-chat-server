@@ -7,7 +7,7 @@ import io.andrewohara.tabbychat.auth.Realm
 import io.andrewohara.tabbychat.auth.dao.TokensDao
 import io.andrewohara.tabbychat.contacts.TokenData
 import io.andrewohara.tabbychat.messages.*
-import io.andrewohara.tabbychat.messages.dao.MessageDao
+import io.andrewohara.tabbychat.messages.dao.MessagesDao
 import io.andrewohara.tabbychat.protocol.v1.client.P2PClientV1Factory
 import io.andrewohara.tabbychat.users.RealName
 import io.andrewohara.tabbychat.users.User
@@ -20,7 +20,7 @@ import java.time.Instant
 
 class TabbyChatService(
     private val realm: Realm,
-    private val messages: MessageDao,
+    private val messages: MessagesDao,
     private val tokens: TokensDao,
     private val users: UsersDao,
     private val clientFactory: P2PClientV1Factory,

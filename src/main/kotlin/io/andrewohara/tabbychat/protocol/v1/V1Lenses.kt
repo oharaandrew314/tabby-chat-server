@@ -12,7 +12,7 @@ import org.http4k.lens.*
 
 object V1Lenses {
     val userId = Path.string()
-        .map({ UserId(it) }, UserId::toString)
+        .map({ UserId(it) }, UserId::value)
         .of("user_id")
     val accessToken = Path.nonEmptyString().of("access_token")
 
