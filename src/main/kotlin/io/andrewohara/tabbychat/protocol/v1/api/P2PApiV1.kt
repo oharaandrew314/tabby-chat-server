@@ -30,6 +30,7 @@ class P2PApiV1(
 
     private val exchangeTokens = tokensPath meta {
         operationId = "v1ExchangeTokens"
+        summary = "Exchange access tokens; save the one given and return a new one"
         security = p2pSecurity
         tags += tag
         receiving(V1Lenses.tokenData to V1Samples.tokenData)
@@ -63,6 +64,7 @@ class P2PApiV1(
 
     private val receiveMessage = messagesPath meta {
         operationId = "v1ReceiveMessage"
+        summary = "Receive a message to be saved"
         security = p2pSecurity
         tags += tag
         receiving(V1Lenses.messageContent to V1Samples.message1.content)
@@ -83,6 +85,7 @@ class P2PApiV1(
 
     private val getUser = userPath meta {
         operationId = "v1GetUser"
+        summary = "Get the user your token belongs to"
         security = p2pSecurity
         tags += tag
         returning(OK, V1Lenses.user to V1Samples.user1)

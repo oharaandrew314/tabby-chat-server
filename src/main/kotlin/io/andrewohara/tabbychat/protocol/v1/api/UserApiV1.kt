@@ -8,6 +8,7 @@ import io.andrewohara.tabbychat.protocol.v1.V1Lenses
 import io.andrewohara.tabbychat.protocol.v1.V1Samples
 import io.andrewohara.tabbychat.protocol.v1.toResponse
 import io.andrewohara.tabbychat.users.UserId
+import org.http4k.contract.Tag
 import org.http4k.contract.div
 import org.http4k.contract.meta
 import org.http4k.contract.security.Security
@@ -31,9 +32,13 @@ class UserApiV1(
         const val invitationsPath = "/client/v1/invitations"
     }
 
+    private val tag = Tag("Client", "Used by clients to work with their own provider")
+
     private val listContactIds = contactsPath meta {
         operationId = "v1ListContactIds"
+        summary = "List the ids of your contacts"
         security = userSecurity
+        tags += tag
         returning(Status.OK, V1Lenses.userIds to V1Samples.userIds)
     } bindContract Method.GET to { request ->
         service.listContacts(auth(request))
@@ -44,7 +49,9 @@ class UserApiV1(
 
     private val getContact = contactPath meta {
         operationId = "v1GetContact"
+        summary = "Get the profile of the given contact"
         security = userSecurity
+        tags += tag
         returning(Status.OK, V1Lenses.user to V1Samples.user1)
     } bindContract Method.GET to { contactId ->
         { request ->
@@ -59,6 +66,7 @@ class UserApiV1(
         operationId = "v1DeleteContact"
         summary = "Delete a contact"
         security = userSecurity
+        tags += tag
     } bindContract Method.DELETE to { contactId ->
         { request ->
             service.deleteContact(ownerId = auth(request), contactId = contactId)
@@ -70,8 +78,10 @@ class UserApiV1(
 
     private val listMessages = messagesPath meta {
         operationId = "v1ListMessages"
+        summary = "Get a page of messages starting from the given time"
         security = userSecurity
         queries += V1Lenses.since
+        tags += tag
         returning(Status.OK, V1Lenses.messagePage to V1Samples.messageList)
     } bindContract Method.GET to { request ->
         service.listMessages(userId = auth(request), since = V1Lenses.since(request))
@@ -82,7 +92,9 @@ class UserApiV1(
 
     private val sendMessage = contactMessagesPath meta {
         operationId = "v1SendMessage"
+        summary = "Send a message to a contact"
         security = userSecurity
+        tags += tag
         receiving(V1Lenses.messageContent)
         returning(Status.OK, V1Lenses.messageReceipt to V1Samples.messageReceipt)
     } bindContract Method.POST to { contactId, _ ->
@@ -97,7 +109,9 @@ class UserApiV1(
 
     private val createInvitation = invitationsPath meta {
         operationId = "v1CreateInvitation"
+        summary = "Create an invitation code to be shared"
         security = userSecurity
+        tags += tag
         returning(Status.OK, V1Lenses.tokenData to V1Samples.tokenData)
     } bindContract Method.GET to { request ->
         service
@@ -109,7 +123,9 @@ class UserApiV1(
 
     private val acceptInvitation = invitationsPath meta {
         operationId = "v1AcceptInvitation"
+        summary = "Accept the given invitation code, adding the user as a contact"
         security = userSecurity
+        tags += tag
         receiving(V1Lenses.tokenData)
         returning(Status.OK, V1Lenses.user to V1Samples.user1)
     } bindContract Method.POST to { request ->
