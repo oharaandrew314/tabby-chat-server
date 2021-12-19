@@ -3,13 +3,10 @@ package io.andrewohara.tabbychat.protocol.v1.api
 import dev.forkhandles.result4k.valueOrNull
 import dev.mrbergin.kotest.result4k.shouldBeFailure
 import dev.mrbergin.kotest.result4k.shouldBeSuccess
-import io.andrewohara.tabbychat.TabbyChatError
-import io.andrewohara.tabbychat.TestDriver
+import io.andrewohara.tabbychat.*
 import io.andrewohara.tabbychat.auth.Realm
 import io.andrewohara.tabbychat.contacts.TokenData
-import io.andrewohara.tabbychat.createUser
 import io.andrewohara.tabbychat.protocol.v1.client.UserClientFactoryV1
-import io.andrewohara.tabbychat.toMessageContent
 import io.andrewohara.utils.jdk.minus
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldHaveSize
@@ -55,6 +52,11 @@ class UserApiV1Test {
     }
 
     @Test
+    fun `send message - not contact`() {
+        client.sendMessage(other.id, "hai".toMessageContent()) shouldBeFailure TabbyChatError.NotFound
+    }
+
+    @Test
     fun `delete contact - not contact`() {
         client.deleteContact(other.id) shouldBeFailure TabbyChatError.NotFound
     }
@@ -81,5 +83,13 @@ class UserApiV1Test {
             page.nextTime.shouldBeNull()
             page.messages.shouldHaveSize(2)
         }
+    }
+
+    @Test
+    fun `accept invitation`() {
+        val invitation = provider.service.createInvitation(other.id).valueOrNull()!!
+
+        client.acceptInvitation(invitation) shouldBeSuccess other
+        client.sendMessage(other.id, "sup".toMessageContent()).shouldBeSuccess()
     }
 }
