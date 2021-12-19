@@ -7,26 +7,30 @@ import io.andrewohara.tabbychat.lib.dao.UserIdConverter
 import io.andrewohara.tabbychat.messages.Message
 import io.andrewohara.tabbychat.messages.MessageContent
 import io.andrewohara.tabbychat.users.UserId
+import io.andrewohara.utils.IdGenerator
 import java.time.Instant
 
 data class DynamoMessage(
     @DynamoKtPartitionKey
-    @DynamoKtConverted(converter = UserIdConverter::class)
+    @DynamoKtConverted(UserIdConverter::class)
     val owner: UserId,
 
     @DynamoKtSortKey
-    val id: Long,
+    val id: String,
 
     val textContent: String? = null,
-
     val received: Instant,
 
-    @DynamoKtConverted(converter = UserIdConverter::class)
-    val sender: UserId
+    @DynamoKtConverted(UserIdConverter::class)
+    val sender: UserId,
+
+    @DynamoKtConverted(UserIdConverter::class)
+    val recipient: UserId
 )
 
 fun DynamoMessage.toMessage() = Message(
     sender = sender,
+    recipient = recipient,
     received = received,
     content = MessageContent(
         text = textContent
@@ -35,7 +39,8 @@ fun DynamoMessage.toMessage() = Message(
 
 fun Message.toDynamo(owner: UserId) = DynamoMessage(
     owner = owner,
-    id = received.toEpochMilli(),
+    recipient = recipient,
+    id = "$received-${IdGenerator.nextBase36(4)}",
     textContent = content.text,
     received = received,
     sender = sender

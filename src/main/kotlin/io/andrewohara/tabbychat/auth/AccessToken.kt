@@ -1,6 +1,3 @@
 package io.andrewohara.tabbychat.auth
 
-data class AccessToken(
-    val value: String,
-    val realm: String
-)
+@JvmInline value class AccessToken(val value: String)

@@ -6,9 +6,9 @@ import org.http4k.server.asServer
 fun main() {
     val port = System.getenv("PORT")?.toIntOrNull() ?: 8000
 
-    val service = ServiceFactory.fromEnv(System.getenv())
+    val service = TabbyChatProvider.fromEnv(System.getenv())
 
-    val server = service.createHttp()
+    val server = service.http
         .asServer(SunHttp(port))
         .start()
 
