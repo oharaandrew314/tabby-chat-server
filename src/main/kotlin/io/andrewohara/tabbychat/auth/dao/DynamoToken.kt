@@ -5,7 +5,9 @@ import io.andrewohara.dynamokt.DynamoKtPartitionKey
 import io.andrewohara.dynamokt.DynamoKtSecondaryPartitionKey
 import io.andrewohara.dynamokt.DynamoKtSecondarySortKey
 import io.andrewohara.tabbychat.auth.AccessToken
+import io.andrewohara.tabbychat.auth.Realm
 import io.andrewohara.tabbychat.lib.dao.AccessTokenConverter
+import io.andrewohara.tabbychat.lib.dao.RealmConverter
 import io.andrewohara.tabbychat.lib.dao.UserIdConverter
 import io.andrewohara.tabbychat.users.UserId
 import java.time.Instant
@@ -25,6 +27,8 @@ data class DynamoToken(
     @DynamoKtConverted(UserIdConverter::class)
     val contact: UserId?,
 
+    @DynamoKtConverted(RealmConverter::class)
+    val contactRealm: Realm?,
     @DynamoKtConverted(AccessTokenConverter::class)
     val contactToken: AccessToken?,
 ) {

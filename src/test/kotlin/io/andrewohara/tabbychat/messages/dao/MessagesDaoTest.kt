@@ -1,11 +1,13 @@
 package io.andrewohara.tabbychat.messages.dao
 
 import io.andrewohara.tabbychat.TestDriver
+import io.andrewohara.tabbychat.auth.Realm
 import io.andrewohara.tabbychat.createUser
 import io.andrewohara.tabbychat.messages.Message
 import io.andrewohara.tabbychat.messages.MessagePage
 import io.andrewohara.tabbychat.toMessageContent
 import io.kotest.matchers.shouldBe
+import org.http4k.core.Uri
 import org.junit.jupiter.api.Test
 import java.time.Duration
 import java.time.Instant
@@ -13,7 +15,7 @@ import java.time.Instant
 class MessagesDaoTest {
 
     private val driver = TestDriver()
-    private val provider = driver.createProvider("tabby.chat")
+    private val provider = driver.createProvider(Realm(Uri.of("http://tabby.chat")))
     private val testObj = provider.messagesDao
 
     private val user = provider.createUser("user")

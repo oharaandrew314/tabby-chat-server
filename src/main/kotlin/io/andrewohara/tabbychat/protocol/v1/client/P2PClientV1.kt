@@ -9,7 +9,6 @@ import dev.forkhandles.result4k.Success
 import io.andrewohara.tabbychat.TabbyChatError
 import io.andrewohara.tabbychat.auth.AccessToken
 import io.andrewohara.tabbychat.auth.Realm
-import io.andrewohara.tabbychat.contacts.Contact
 import io.andrewohara.tabbychat.contacts.TokenData
 import io.andrewohara.tabbychat.messages.*
 import io.andrewohara.tabbychat.protocol.v1.V1Lenses
@@ -27,8 +26,7 @@ fun interface P2PClientV1Factory: (Realm, AccessToken) -> P2PClientV1 {
         return P2PClientV1(client)
     }
 
-    operator fun invoke(contact: Contact): P2PClientV1 = invoke(contact.id.realm, contact.contactToken)
-    operator fun invoke(invitation: TokenData): P2PClientV1 = invoke(invitation.userId.realm, invitation.token)
+    operator fun invoke(token: TokenData): P2PClientV1 = invoke(token.realm, token.token)
 }
 
 class P2PClientV1 internal constructor(private val backend: HttpHandler) {

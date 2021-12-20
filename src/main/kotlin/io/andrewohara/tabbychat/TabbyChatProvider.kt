@@ -109,7 +109,7 @@ class TabbyChatProvider(
             env: Map<String, String>,
             dynamo: DynamoDbEnhancedClient = DynamoDbEnhancedClient.create()
         ): TabbyChatProvider {
-            val realm = Realm(env.getValue("REALM"))
+            val realm = Realm(Uri.of(env.getValue("REALM")))
             val usersTableName = env.getValue("USERS_TABLE_NAME")
             val messagesTableName = env.getValue("MESSAGES_TABLE_NAME")
             val tokensTableName = env.getValue("TOKENS_TABLE_NAME")

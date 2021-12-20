@@ -1,6 +1,7 @@
 package io.andrewohara.tabbychat.protocol.v1
 
 import io.andrewohara.tabbychat.auth.AccessToken
+import io.andrewohara.tabbychat.auth.Realm
 import io.andrewohara.tabbychat.contacts.TokenData
 import io.andrewohara.tabbychat.messages.Message
 import io.andrewohara.tabbychat.messages.MessageContent
@@ -9,6 +10,7 @@ import io.andrewohara.tabbychat.messages.MessageReceipt
 import io.andrewohara.tabbychat.users.RealName
 import io.andrewohara.tabbychat.users.User
 import io.andrewohara.tabbychat.users.UserId
+import org.http4k.core.Uri
 import java.net.URL
 import java.time.Instant
 
@@ -106,9 +108,11 @@ fun MessageContent.toDtoV1() = MessageContentDtoV1(
     text = text,
 )
 
-data class InvitationDtoV1(
+data class AccessTokenDtoV1(
     val userId: String,
-    val token: String
+    val realm: Uri,
+    val token: String,
+    val expires: Instant?
 )
-fun InvitationDtoV1.toModel() = TokenData(userId = UserId(userId), token = AccessToken(token))
-fun TokenData.toDtoV1() = InvitationDtoV1(userId = userId.value, token = token.value)
+fun AccessTokenDtoV1.toModel() = TokenData(userId = UserId(userId), token = AccessToken(token), realm = Realm(realm), expires = expires)
+fun TokenData.toDtoV1() = AccessTokenDtoV1(userId = userId.value, token = token.value, realm = realm.value, expires = expires)

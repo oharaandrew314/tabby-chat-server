@@ -12,6 +12,7 @@ import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
+import org.http4k.core.Uri
 import org.junit.jupiter.api.Test
 import java.time.Duration
 
@@ -19,7 +20,7 @@ class UserApiV1Test {
 
     private val driver = TestDriver()
 
-    private val provider = driver.createProvider(Realm("tabby.chat"))
+    private val provider = driver.createProvider(Realm(Uri.of("http://tabby.chat")))
 
     private val self = provider.createUser("self")
     private val selfToken: TokenData = provider.service.createAccessToken(self.id).valueOrNull()!!

@@ -5,19 +5,21 @@ import dev.mrbergin.kotest.result4k.shouldBeFailure
 import dev.mrbergin.kotest.result4k.shouldBeSuccess
 import io.andrewohara.tabbychat.auth.AccessToken
 import io.andrewohara.tabbychat.auth.Authorization
+import io.andrewohara.tabbychat.auth.Realm
 import io.andrewohara.tabbychat.contacts.TokenData
 import io.andrewohara.tabbychat.messages.toMessage
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
+import org.http4k.core.Uri
 import org.junit.jupiter.api.Test
 
 class TabbyChatServiceTest {
 
     private val driver = TestDriver()
 
-    private val tabbyChat = driver.createProvider("tabby.chat")
-    private val brownChat = driver.createProvider("brown.chat")
+    private val tabbyChat = driver.createProvider(Realm(Uri.of("http://tabby.chat")))
+    private val brownChat = driver.createProvider(Realm(Uri.of("http://brown.chat")))
 
     private val tabbyUser1 = tabbyChat.createUser("tabby user 1")
     private val tabbyUser2 = tabbyChat.createUser("tabby user 2")
@@ -123,7 +125,7 @@ class TabbyChatServiceTest {
 
     @Test
     fun `accept invitation - invalid token`() {
-        val fakeInvitation = TokenData(AccessToken("ABC123"), tabbyUser2.id)
+        val fakeInvitation = TokenData(AccessToken("ABC123"), tabbyUser2.id, tabbyChat.realm, null)
 
         tabbyChat.service.acceptInvitation(tabbyUser1.id, fakeInvitation) shouldBeFailure TabbyChatError.Forbidden
     }

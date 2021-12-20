@@ -8,14 +8,12 @@ import io.andrewohara.tabbychat.auth.AccessToken
 import io.andrewohara.tabbychat.auth.AccessTokenGenerator
 import io.andrewohara.tabbychat.auth.Realm
 import io.andrewohara.tabbychat.auth.dao.DynamoToken
+import io.andrewohara.tabbychat.contacts.TokenData
 import io.andrewohara.tabbychat.messages.dao.DynamoMessage
 import io.andrewohara.tabbychat.users.User
 import io.andrewohara.tabbychat.users.dao.DynamoUser
 import io.andrewohara.utils.jdk.toClock
-import org.http4k.core.HttpHandler
-import org.http4k.core.Request
-import org.http4k.core.Response
-import org.http4k.core.Status
+import org.http4k.core.*
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient
 import java.time.Instant
 
@@ -35,7 +33,6 @@ class TestDriver: HttpHandler {
         AccessTokenGenerator { AccessToken("token${nextToken++}") }
     }
 
-    fun createProvider(realm: String) = createProvider(Realm(realm))
    fun createProvider(realm: Realm) = TabbyChatProvider(
        clientFactory = { externalRealm -> providers.first { it.realm == externalRealm }.http },
        clock = clock,
@@ -46,26 +43,28 @@ class TestDriver: HttpHandler {
        tokenGenerator = nextToken
    ).also { providers += it }
 
-    private fun getProvider(userId: UserId) = getProvider(userId.realm)
-    private fun getProvider(realm: Realm) = providers.firstOrNull { it.realm == realm }
+    private fun getProvider(realm: Realm) = providers.first { it.realm == realm }
+    private fun getProvider(userId: UserId) = providers.first { provider -> provider.usersDao.any { it.id == userId } }
 
     override fun invoke(request: Request): Response {
-        val realm = Realm(request.uri.host)
-        val provider = getProvider(realm) ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val realm = Realm(Uri.of("${request.uri.scheme}://${request.uri.host}"))
+        val provider = getProvider(realm)
         return provider(request)
     }
 
-    fun listContactIds(userId: UserId) = getProvider(userId)!!.tokensDao.listContacts(userId).map { it.id }
+    fun listContactIds(userId: UserId) = getProvider(userId).tokensDao.listContacts(userId).map { it.id }
 
     fun listMessages(user: User, since: Instant = startTime, limit: Int = 1000) = listMessages(user.id, since, limit)
-    fun listMessages(userId: UserId, since: Instant = startTime, limit: Int = 1000) = getProvider(userId)!!.messagesDao.list(userId, since, limit).messages
+    fun listMessages(userId: UserId, since: Instant = startTime, limit: Int = 1000) = getProvider(userId).messagesDao.list(userId, since, limit).messages
 
     fun givenContacts(user1: User, user2: User) = givenContacts(user1.id, user2.id)
     fun givenContacts(user1: UserId, user2: UserId) {
         val token1 = nextToken()
         val token2 = nextToken()
 
-        getProvider(user1)!!.tokensDao.createContact(user1, user2, accessToken = token2, contactToken = token1)
-        getProvider(user2)!!.tokensDao.createContact(user2, user1, accessToken = token1, contactToken = token2)
+        getProvider(user1).tokensDao.createContact(user1, token2, contactToken = TokenData(token1, user2, user2.realm(), null))
+        getProvider(user2).tokensDao.createContact(user2, token1, contactToken = TokenData(token2, user1, user1.realm(), null))
     }
+
+    private fun UserId.realm() = getProvider(this).realm
 }

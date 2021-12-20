@@ -13,48 +13,37 @@ import java.time.Instant
 
 class TokensDao(private val mapper: DynamoDbTable<DynamoToken>) {
 
-    fun createContact(incoming: TokenData, outgoing: TokenData) = createContact(
-        owner = incoming.userId,
-        contact = outgoing.userId,
-        accessToken = incoming.token,
-        contactToken = outgoing.token
-    )
-
-    fun createContact(owner: UserId, contact: UserId, accessToken: AccessToken, contactToken: AccessToken): Contact {
+    fun createContact(owner: UserId, accessToken: AccessToken, contactToken: TokenData): Contact {
         val item = DynamoToken(
             value = accessToken,
             type = DynamoToken.Type.Contact,
             owner = owner,
-            contact = contact,
-            expires = null,
-            contactToken = contactToken
+            contact = contactToken.userId,
+            expires = contactToken.expires?.epochSecond,
+            contactToken = contactToken.token,
+            contactRealm = contactToken.realm
         )
 
         mapper.putItem(item)
         return Contact(
             ownerId = owner,
-            id = contact,
             accessToken = accessToken,
             contactToken = contactToken
         )
     }
 
-    fun saveInvitation(owner: UserId, expires: Instant, accessToken: AccessToken): TokenData {
+    fun saveInvitation(token: TokenData) {
         val item = DynamoToken(
-            value = accessToken,
+            value = token.token,
             type = DynamoToken.Type.Invitation,
-            owner = owner,
+            owner = token.userId,
             contact = null,
-            expires = expires.epochSecond,
+            expires = token.expires?.epochSecond,
+            contactRealm = null,
             contactToken = null
         )
 
         mapper.putItem(item)
-
-        return TokenData(
-            token = accessToken,
-            userId = owner
-        )
     }
 
     fun saveUserToken(owner: UserId, accessToken: AccessToken) {
@@ -64,6 +53,7 @@ class TokensDao(private val mapper: DynamoDbTable<DynamoToken>) {
             owner = owner,
             contact = null,
             expires = null,
+            contactRealm = null,
             contactToken = null
         )
 
@@ -101,12 +91,7 @@ class TokensDao(private val mapper: DynamoDbTable<DynamoToken>) {
             .asSequence()
             .flatMap { it.items() }
             .filter { it.type == DynamoToken.Type.Contact }
-            .map { token -> Contact(
-                ownerId = owner,
-                id = token.contact!!,
-                accessToken = token.value,
-                contactToken = token.contactToken!!
-            ) }
+            .map { token -> token.toContact() }
             .toList()
     }
 
@@ -117,14 +102,20 @@ class TokensDao(private val mapper: DynamoDbTable<DynamoToken>) {
             .asSequence()
             .flatMap { it.items() }
             .filter { it.type == DynamoToken.Type.Contact }
-            .map { token -> Contact(
-                ownerId = owner,
-                id = token.contact!!,
-                accessToken = token.value,
-                contactToken = token.contactToken!!
-            ) }
+            .map { token -> token.toContact() }
             .firstOrNull()
     }
+
+    private fun DynamoToken.toContact() = Contact(
+        ownerId = owner,
+        accessToken = value,
+        contactToken = TokenData(
+            userId = contact!!,
+            realm = contactRealm!!,
+            token = contactToken!!,
+            expires = expires?.let { Instant.ofEpochSecond(it) }
+        )
+    )
 
     private fun AccessToken.toKey() = Key.builder().partitionValue(value).build()
 }

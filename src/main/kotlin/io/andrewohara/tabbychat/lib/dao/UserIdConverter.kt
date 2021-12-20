@@ -1,7 +1,9 @@
 package io.andrewohara.tabbychat.lib.dao
 
 import io.andrewohara.tabbychat.auth.AccessToken
+import io.andrewohara.tabbychat.auth.Realm
 import io.andrewohara.tabbychat.users.UserId
+import org.http4k.core.Uri
 import software.amazon.awssdk.enhanced.dynamodb.AttributeConverter
 import software.amazon.awssdk.enhanced.dynamodb.AttributeValueType
 import software.amazon.awssdk.enhanced.dynamodb.EnhancedType
@@ -18,6 +20,20 @@ class UserIdConverter: AttributeConverter<UserId> {
     override fun transformTo(input: AttributeValue) = UserId(input.s())
 
     override fun type(): EnhancedType<UserId> = EnhancedType.of(UserId::class.java)
+
+    override fun attributeValueType() = AttributeValueType.S
+}
+
+class RealmConverter: AttributeConverter<Realm> {
+
+    override fun transformFrom(id: Realm?): AttributeValue = AttributeValue.builder().let {
+        if (id == null) it.nul(true) else it.s(id.value.toString())
+        it.build()
+    }
+
+    override fun transformTo(input: AttributeValue) = Realm(Uri.of(input.s()))
+
+    override fun type(): EnhancedType<Realm> = EnhancedType.of(Realm::class.java)
 
     override fun attributeValueType() = AttributeValueType.S
 }

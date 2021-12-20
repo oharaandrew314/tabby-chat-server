@@ -17,6 +17,7 @@ import java.net.URL
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
+import java.util.*
 
 class TabbyChatService(
     private val realm: Realm,
@@ -48,7 +49,7 @@ class TabbyChatService(
 
         val contact = tokens.getContact(user.id, contactId) ?: return TabbyChatError.NotContact.err()
 
-        val receipt = clientFactory(contact).sendMessage(content).onFailure { return it }
+        val receipt = clientFactory(contact.contactToken).sendMessage(content).onFailure { return it }
         messages.add(userId, receipt.toMessage(content))
         return Success(receipt)
     }
@@ -71,7 +72,7 @@ class TabbyChatService(
         val contact = tokens.getContact(ownerId, contactId) ?: return TabbyChatError.NotContact.err()
 
         val deleted = tokens.revoke(contact.accessToken)
-        if (deleted) clientFactory(contact).revokeContact()
+        if (deleted) clientFactory(contact.contactToken).revokeContact()
 
         return Success(Unit)
     }
@@ -79,12 +80,16 @@ class TabbyChatService(
     fun createInvitation(userId: UserId): Result<TokenData, TabbyChatError> {
         val user = users[userId] ?: return TabbyChatError.NotFound.err()
 
-        val token = tokens.saveInvitation(
-            owner = user.id,
-            accessToken = nextToken(),
+        val tokenData = TokenData(
+            userId = user.id,
+            realm = realm,
+            token = nextToken(),
             expires = clock.instant() + invitationDuration
         )
-        return Success(token)
+
+        tokens.saveInvitation(tokenData)
+
+        return Success(tokenData)
     }
 
     fun createAccessToken(userId: UserId): Result<TokenData, TabbyChatError> {
@@ -92,35 +97,34 @@ class TabbyChatService(
 
         val token = nextToken()
         tokens.saveUserToken(user.id, token)
-        return Success(TokenData(token, user.id))
+        return Success(TokenData(token, user.id, realm, null))
     }
 
     fun acceptInvitation(userId: UserId, invitation: TokenData): Result<User, TabbyChatError> {
-        val incomingToken = TokenData(nextToken(), userId)
+        val accessToken = TokenData(nextToken(), userId, realm, null)
 
-        val outgoingToken = clientFactory(invitation).exchangeTokens(incomingToken)
+        val contactToken = clientFactory(invitation).exchangeTokens(accessToken)
             .onFailure { return it }
 
-        val contact = tokens.createContact(incoming = incomingToken, outgoing = outgoingToken)
+        tokens.createContact(owner = userId, accessToken = accessToken.token, contactToken = contactToken)
 
-        return clientFactory(contact).getUser()
+        return clientFactory(contactToken).getUser()
     }
 
-    fun exchangeToken(userId: UserId, contactId: UserId, existingToken: AccessToken, incomingToken: AccessToken): Result<TokenData, TabbyChatError> {
+    fun exchangeToken(userId: UserId, existingToken: AccessToken, incomingToken: TokenData): Result<TokenData, TabbyChatError> {
         tokens.revoke(existingToken)
 
         val contact = tokens.createContact(
             owner = userId,
-            contact = contactId,
             accessToken =  nextToken(),
             contactToken = incomingToken
         )
 
-        return Success(TokenData(token = contact.accessToken, userId = userId))
+        return Success(TokenData(contact.accessToken, userId, realm, null))
     }
 
     fun createUser(name: RealName?, photo: URL?): User {
-        val userId = UserId.create(realm)
+        val userId = UserId(UUID.randomUUID().toString())
         return User(userId, name, photo).also(users::plusAssign)
     }
 
@@ -131,8 +135,8 @@ class TabbyChatService(
 
     fun getContact(userId: UserId, contactId: UserId): Result<User, TabbyChatError> {
         val user = users[userId] ?: return TabbyChatError.NotFound.err()
-        val contactRef = tokens.getContact(user.id, contactId) ?: return TabbyChatError.NotFound.err()
+        val contact = tokens.getContact(user.id, contactId) ?: return TabbyChatError.NotFound.err()
 
-        return clientFactory(contactRef).getUser()
+        return clientFactory(contact.contactToken).getUser()
     }
 }

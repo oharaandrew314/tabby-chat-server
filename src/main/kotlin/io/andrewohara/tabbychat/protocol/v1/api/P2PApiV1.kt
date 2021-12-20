@@ -42,17 +42,15 @@ class P2PApiV1(
             is Authorization.Contact -> {
                 service.exchangeToken(
                     userId = auth.owner,
-                    contactId = auth.contact,
                     existingToken = auth.token,
-                    incomingToken = incomingToken.token
+                    incomingToken = incomingToken
                 )
             }
             is Authorization.Invite -> {
                 service.exchangeToken(
                     userId = auth.owner,
-                    contactId = incomingToken.userId,
                     existingToken = auth.token,
-                    incomingToken = incomingToken.token
+                    incomingToken = incomingToken
                 )
             }
             is Authorization.Owner -> return@handler Response(Status.FORBIDDEN)

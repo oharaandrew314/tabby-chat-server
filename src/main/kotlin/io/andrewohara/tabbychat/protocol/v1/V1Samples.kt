@@ -10,19 +10,20 @@ import io.andrewohara.tabbychat.messages.MessageReceipt
 import io.andrewohara.tabbychat.users.RealName
 import io.andrewohara.tabbychat.users.User
 import io.andrewohara.tabbychat.users.UserId
+import org.http4k.core.Uri
 import java.net.URL
 import java.time.Instant
 
 object V1Samples {
 
     val user1 = User(
-        id = UserId.create(Realm("http://tabbychat.io")),
+        id = UserId("toggles"),
         name = RealName(first = "Toggles", middle = null, last = "Brown"),
         icon = URL("http://tabbychat.io/icons/togglesBrown.jpg")
     )
 
     val user2 = User(
-        id = UserId.create(Realm("http://brownchat.com")),
+        id = UserId("trollTroll"),
         name = RealName(first = "Toll", middle = "the", last = "Troll"),
         icon = URL("http://brownchat.com/icons/tollTroll.jpg")
     )
@@ -31,7 +32,9 @@ object V1Samples {
 
     val tokenData = TokenData(
         userId = user1.id,
-        token = AccessToken("ABC123")
+        token = AccessToken("ABC123"),
+        realm = Realm(Uri.of("http://tabby.chat")),
+        expires = null
     )
 
     val message1 = Message(
