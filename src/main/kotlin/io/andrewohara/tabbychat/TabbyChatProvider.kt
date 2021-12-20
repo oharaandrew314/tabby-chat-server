@@ -4,8 +4,10 @@ import io.andrewohara.dynamokt.DataClassTableSchema
 import io.andrewohara.tabbychat.protocol.v1.api.P2PApiV1
 import io.andrewohara.tabbychat.protocol.v1.api.UserApiV1
 import io.andrewohara.tabbychat.auth.*
-import io.andrewohara.tabbychat.auth.dao.DynamoToken
-import io.andrewohara.tabbychat.auth.dao.TokensDao
+import io.andrewohara.tabbychat.auth.dao.AuthorizationDao
+import io.andrewohara.tabbychat.contacts.Contact
+import io.andrewohara.tabbychat.contacts.ContactsDao
+import io.andrewohara.tabbychat.contacts.Authorization
 import io.andrewohara.tabbychat.messages.dao.DynamoMessage
 import io.andrewohara.tabbychat.messages.dao.MessagesDao
 import io.andrewohara.tabbychat.protocol.v1.client.P2PClientV1Factory
@@ -30,30 +32,27 @@ class TabbyChatProvider(
     clock: Clock,
     val realm: Realm,
     messagesTable: DynamoDbTable<DynamoMessage>,
-    tokensTable: DynamoDbTable<DynamoToken>,
+    authTable: DynamoDbTable<Authorization>,
     usersTable: DynamoDbTable<DynamoUser>,
+    contactsTable: DynamoDbTable<Contact>,
     clientFactory: P2PClientV1Factory = P2PClientV1Factory { JavaHttpClient() },
     tokenGenerator: AccessTokenGenerator = AccessTokenGenerator.base36(16),
     messagePageSize: Int = 10,
     invitationDuration: Duration = Duration.ofHours(12)
 ): HttpHandler {
 
-    val messagesDao = MessagesDao(messagesTable)
-    val tokensDao = TokensDao(tokensTable)
+    val authDao = AuthorizationDao(authTable)
+    val contactsDao = ContactsDao(contactsTable)
     val usersDao = UsersDao(usersTable)
-
-    val authService = AuthService(
-        tokensDao = tokensDao,
-        tokenGenerator = tokenGenerator,
-        clock = clock
-    )
+    val messagesDao = MessagesDao(messagesTable)
 
     val service = TabbyChatService(
         realm = realm,
         clientFactory = clientFactory,
-        tokens = tokensDao,
+        auth = authDao,
         users = usersDao,
         messages = messagesDao,
+        contacts = contactsDao,
         messagePageSize = messagePageSize,
         clock = clock,
         nextToken = tokenGenerator,
@@ -63,11 +62,15 @@ class TabbyChatProvider(
     val http: HttpHandler = let {
         val contexts = RequestContexts()
 
-        val ownerLens = RequestContextKey.required<UserId>(contexts, "owners")
-        val ownerSecurity = BearerAuthSecurity(key = ownerLens, lookup = { (authService.authorize(it) as? Authorization.Owner)?.owner })
+        val ownerLens = RequestContextKey.required<UserId>(contexts, "users")
+        val ownerSecurity = BearerAuthSecurity(key = ownerLens, lookup = { tokenValue ->
+            service.authorize(AccessToken(tokenValue))
+                ?.takeIf { it.type == Authorization.Type.User }
+                ?.bearer
+        })
 
-        val p2pAuthLens = RequestContextKey.required<Authorization>(contexts, "contacts")
-        val p2pSecurity = BearerAuthSecurity(key = p2pAuthLens, lookup = authService::authorize)
+        val p2pAuthLens = RequestContextKey.required<Authorization>(contexts, "tokens")
+        val p2pSecurity = BearerAuthSecurity(key = p2pAuthLens, lookup = { service.authorize(AccessToken(it)) })
 
         val p2pApiV1 = P2PApiV1(
             service = service,
@@ -113,6 +116,7 @@ class TabbyChatProvider(
             val usersTableName = env.getValue("USERS_TABLE_NAME")
             val messagesTableName = env.getValue("MESSAGES_TABLE_NAME")
             val tokensTableName = env.getValue("TOKENS_TABLE_NAME")
+            val contactsTableName = env.getValue("CONTACTS_TABLE_NAME")
 
             return TabbyChatProvider(
                 clock = Clock.systemUTC(),
@@ -120,7 +124,8 @@ class TabbyChatProvider(
                 clientFactory = { JavaHttpClient() },
                 usersTable = dynamo.table(usersTableName, DataClassTableSchema(DynamoUser::class)),
                 messagesTable = dynamo.table(messagesTableName, DataClassTableSchema(DynamoMessage::class)),
-                tokensTable = dynamo.table(tokensTableName, DataClassTableSchema(DynamoToken::class))
+                authTable = dynamo.table(tokensTableName, DataClassTableSchema(Authorization::class)),
+                contactsTable = dynamo.table(contactsTableName, DataClassTableSchema(Contact::class))
             )
         }
     }

@@ -28,11 +28,10 @@ object V1Samples {
         icon = URL("http://brownchat.com/icons/tollTroll.jpg")
     )
 
-    val userIds = arrayOf(user1.id, user2.id)
+    val userIds = listOf(user1.id, user2.id)
 
     val tokenData = TokenData(
-        userId = user1.id,
-        token = AccessToken("ABC123"),
+        accessToken = AccessToken("ABC123"),
         realm = Realm(Uri.of("http://tabby.chat")),
         expires = null
     )

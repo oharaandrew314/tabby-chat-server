@@ -3,23 +3,17 @@ package io.andrewohara.tabbychat.protocol.v1.client
 import dev.forkhandles.result4k.Result
 import dev.forkhandles.result4k.Success
 import io.andrewohara.tabbychat.TabbyChatError
-import io.andrewohara.tabbychat.contacts.TokenData
-import io.andrewohara.tabbychat.messages.MessageContent
-import io.andrewohara.tabbychat.messages.MessagePage
-import io.andrewohara.tabbychat.messages.MessageReceipt
-import io.andrewohara.tabbychat.protocol.v1.V1Lenses
+import io.andrewohara.tabbychat.protocol.v1.*
 import io.andrewohara.tabbychat.protocol.v1.api.UserApiV1
-import io.andrewohara.tabbychat.protocol.v1.toError
-import io.andrewohara.tabbychat.users.User
-import io.andrewohara.tabbychat.users.UserId
 import org.http4k.core.*
 import org.http4k.filter.ClientFilters
 import java.time.Instant
 
-class UserClientFactoryV1(private val backend: HttpHandler): (TokenData) -> UserClientV1 {
+class UserClientFactoryV1(private val backend: HttpHandler): (TokenDataDtoV1) -> UserClientV1 {
 
-    override fun invoke(tokenData: TokenData): UserClientV1 {
-        val client = ClientFilters.BearerAuth(tokenData.token.value)
+    override fun invoke(token: TokenDataDtoV1): UserClientV1 {
+        val client = ClientFilters.BearerAuth(token.accessToken)
+            .then(ClientFilters.SetHostFrom(token.realm))
             .then(backend)
 
         return UserClientV1(client)
@@ -28,7 +22,7 @@ class UserClientFactoryV1(private val backend: HttpHandler): (TokenData) -> User
 
 class UserClientV1(private val backend: HttpHandler) {
 
-    fun listContactIds(): Result<Array<UserId>, TabbyChatError> {
+    fun listContactIds(): Result<Array<String>, TabbyChatError> {
         val response = Request(Method.GET, UserApiV1.contactsPath)
             .let(backend)
 
@@ -37,7 +31,7 @@ class UserClientV1(private val backend: HttpHandler) {
         return Success(V1Lenses.userIds(response))
     }
 
-    fun getContact(contactId: UserId): Result<User, TabbyChatError> {
+    fun getContact(contactId: String): Result<UserDtoV1, TabbyChatError> {
         val response = Request(Method.GET, "${UserApiV1.contactsPath}/${V1Lenses.userId}")
             .with(V1Lenses.userId of contactId)
             .let(backend)
@@ -47,7 +41,7 @@ class UserClientV1(private val backend: HttpHandler) {
         return Success(V1Lenses.user(response))
     }
 
-    fun deleteContact(contactId: UserId): Result<Unit, TabbyChatError> {
+    fun deleteContact(contactId: String): Result<Unit, TabbyChatError> {
         val response = Request(Method.DELETE, "${UserApiV1.contactsPath}/${V1Lenses.userId}")
             .with(V1Lenses.userId of contactId)
             .let(backend)
@@ -57,7 +51,7 @@ class UserClientV1(private val backend: HttpHandler) {
         return Success(Unit)
     }
 
-    fun listMessages(since: Instant): Result<MessagePage, TabbyChatError> {
+    fun listMessages(since: Instant): Result<MessagePageDtoV1, TabbyChatError> {
         val response = Request(Method.GET, UserApiV1.messagesPath)
             .with(V1Lenses.since of since)
             .let(backend)
@@ -67,7 +61,7 @@ class UserClientV1(private val backend: HttpHandler) {
         return Success(V1Lenses.messagePage(response))
     }
 
-    fun createInvitation(): Result<TokenData, TabbyChatError> {
+    fun createInvitation(): Result<TokenDataDtoV1, TabbyChatError> {
         val response = Request(Method.GET, UserApiV1.invitationsPath)
             .let(backend)
 
@@ -76,7 +70,7 @@ class UserClientV1(private val backend: HttpHandler) {
         return Success(V1Lenses.tokenData(response))
     }
 
-    fun sendMessage(contactId: UserId, content: MessageContent): Result<MessageReceipt, TabbyChatError> {
+    fun sendMessage(contactId: String, content: MessageContentDtoV1): Result<MessageReceiptDtoV1, TabbyChatError> {
         val response = Request(Method.POST, "${UserApiV1.contactsPath}/${V1Lenses.userId}/messages")
             .with(V1Lenses.userId of contactId)
             .with(V1Lenses.messageContent of content)
@@ -87,7 +81,7 @@ class UserClientV1(private val backend: HttpHandler) {
         return Success(V1Lenses.messageReceipt(response))
     }
 
-    fun acceptInvitation(tokenData: TokenData): Result<User, TabbyChatError> {
+    fun acceptInvitation(tokenData: TokenDataDtoV1): Result<UserDtoV1, TabbyChatError> {
         val response = Request(Method.POST, UserApiV1.invitationsPath)
             .with(V1Lenses.tokenData of tokenData)
             .let(backend)

@@ -7,7 +7,9 @@ import io.andrewohara.tabbychat.*
 import io.andrewohara.tabbychat.auth.Realm
 import io.andrewohara.tabbychat.contacts.TokenData
 import io.andrewohara.tabbychat.protocol.v1.client.UserClientFactoryV1
+import io.andrewohara.tabbychat.protocol.v1.toDtoV1
 import io.andrewohara.utils.jdk.minus
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldBeNull
@@ -30,47 +32,50 @@ class UserApiV1Test {
     }
     private val other = provider.createUser("other")
 
-    private val client = UserClientFactoryV1(provider)(selfToken)
+    private val client = UserClientFactoryV1(provider)(selfToken.toDtoV1())
 
     @Test
     fun `get contact`() {
-        client.getContact(contact.id) shouldBeSuccess contact
+        client.getContact(contact.id.toDtoV1()) shouldBeSuccess contact.toDtoV1()
     }
 
     @Test
     fun `list contacts`() {
         client.listContactIds().shouldBeSuccess {
-            it.shouldContainExactly(contact.id)
+            it.shouldContainExactly(contact.id.toDtoV1())
         }
     }
 
     @Test
     fun `send message`() {
-        client.sendMessage(contact.id, "hai".toMessageContent()).shouldBeSuccess { receipt ->
-            receipt.sender shouldBe self.id
-            receipt.recipient shouldBe contact.id
+        client.sendMessage(contact.id.toDtoV1(), "hai".toMessageContent().toDtoV1()).shouldBeSuccess { receipt ->
+            receipt.sender shouldBe self.id.toDtoV1()
+            receipt.recipient shouldBe contact.id.toDtoV1()
         }
     }
 
     @Test
     fun `send message - not contact`() {
-        client.sendMessage(other.id, "hai".toMessageContent()) shouldBeFailure TabbyChatError.NotFound
+        client.sendMessage(other.id.toDtoV1(), "hai".toMessageContent().toDtoV1()) shouldBeFailure TabbyChatError.NotFound
     }
 
     @Test
     fun `delete contact - not contact`() {
-        client.deleteContact(other.id) shouldBeFailure TabbyChatError.NotFound
+        client.deleteContact(other.id.toDtoV1()) shouldBeFailure TabbyChatError.NotFound
     }
 
     @Test
     fun `delete contact`() {
-        client.deleteContact(contact.id) shouldBeSuccess Unit
+        client.deleteContact(contact.id.toDtoV1()) shouldBeSuccess Unit
+
+        provider.contactsDao[self.id].shouldBeEmpty()
+        provider.contactsDao[contact.id].shouldBeEmpty()
     }
 
     @Test
     fun `create invitation`() {
         client.createInvitation().shouldBeSuccess { token ->
-            token.userId shouldBe self.id
+            token.realm shouldBe provider.realm.value
         }
     }
 
@@ -90,7 +95,7 @@ class UserApiV1Test {
     fun `accept invitation`() {
         val invitation = provider.service.createInvitation(other.id).valueOrNull()!!
 
-        client.acceptInvitation(invitation) shouldBeSuccess other
-        client.sendMessage(other.id, "sup".toMessageContent()).shouldBeSuccess()
+        client.acceptInvitation(invitation.toDtoV1()) shouldBeSuccess other.toDtoV1()
+        client.sendMessage(other.id.toDtoV1(), "sup".toMessageContent().toDtoV1()).shouldBeSuccess()
     }
 }

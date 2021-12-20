@@ -4,9 +4,7 @@ import dev.forkhandles.result4k.get
 import dev.forkhandles.result4k.map
 import dev.forkhandles.result4k.mapFailure
 import io.andrewohara.tabbychat.TabbyChatService
-import io.andrewohara.tabbychat.protocol.v1.V1Lenses
-import io.andrewohara.tabbychat.protocol.v1.V1Samples
-import io.andrewohara.tabbychat.protocol.v1.toResponse
+import io.andrewohara.tabbychat.protocol.v1.*
 import io.andrewohara.tabbychat.users.UserId
 import org.http4k.contract.Tag
 import org.http4k.contract.div
@@ -39,10 +37,10 @@ class UserApiV1(
         summary = "List the ids of your contacts"
         security = userSecurity
         tags += tag
-        returning(Status.OK, V1Lenses.userIds to V1Samples.userIds)
+        returning(Status.OK, V1Lenses.userIds to V1Samples.userIds.toDtoV1())
     } bindContract Method.GET to { request ->
         service.listContacts(auth(request))
-            .map { Response(Status.OK).with(V1Lenses.userIds of it.toTypedArray()) }
+            .map { Response(Status.OK).with(V1Lenses.userIds of it.toDtoV1()) }
             .mapFailure { it.toResponse() }
             .get()
     }
@@ -52,11 +50,11 @@ class UserApiV1(
         summary = "Get the profile of the given contact"
         security = userSecurity
         tags += tag
-        returning(Status.OK, V1Lenses.user to V1Samples.user1)
+        returning(Status.OK, V1Lenses.user to V1Samples.user1.toDtoV1())
     } bindContract Method.GET to { contactId ->
         { request ->
-            service.getContact(userId = auth(request), contactId = contactId)
-                .map { Response(Status.OK).with(V1Lenses.user of it) }
+            service.getContact(userId = auth(request), contactId = contactId.toUserId())
+                .map { Response(Status.OK).with(V1Lenses.user of it.toDtoV1()) }
                 .mapFailure { it.toResponse() }
                 .get()
         }
@@ -69,7 +67,7 @@ class UserApiV1(
         tags += tag
     } bindContract Method.DELETE to { contactId ->
         { request ->
-            service.deleteContact(ownerId = auth(request), contactId = contactId)
+            service.deleteContact(ownerId = auth(request), contactId = contactId.toUserId())
                 .map { Response(Status.OK) }
                 .mapFailure { it.toResponse() }
                 .get()
@@ -82,10 +80,10 @@ class UserApiV1(
         security = userSecurity
         queries += V1Lenses.since
         tags += tag
-        returning(Status.OK, V1Lenses.messagePage to V1Samples.messageList)
+        returning(Status.OK, V1Lenses.messagePage to V1Samples.messageList.toDtoV1())
     } bindContract Method.GET to { request ->
         service.listMessages(userId = auth(request), since = V1Lenses.since(request))
-            .map { Response(Status.OK).with(V1Lenses.messagePage of it) }
+            .map { Response(Status.OK).with(V1Lenses.messagePage of it.toDtoV1()) }
             .mapFailure { it.toResponse() }
             .get()
     }
@@ -96,12 +94,12 @@ class UserApiV1(
         security = userSecurity
         tags += tag
         receiving(V1Lenses.messageContent)
-        returning(Status.OK, V1Lenses.messageReceipt to V1Samples.messageReceipt)
+        returning(Status.OK, V1Lenses.messageReceipt to V1Samples.messageReceipt.toDtoV1())
     } bindContract Method.POST to { contactId, _ ->
         { request ->
             service
-                .sendMessage(userId = auth(request), contactId = contactId, content = V1Lenses.messageContent(request))
-                .map { Response(Status.OK).with(V1Lenses.messageReceipt of it) }
+                .sendMessage(userId = auth(request), contactId = contactId.toUserId(), content = V1Lenses.messageContent(request).toModel())
+                .map { Response(Status.OK).with(V1Lenses.messageReceipt of it.toDtoV1()) }
                 .mapFailure { it.toResponse() }
                 .get()
         }
@@ -112,11 +110,11 @@ class UserApiV1(
         summary = "Create an invitation code to be shared"
         security = userSecurity
         tags += tag
-        returning(Status.OK, V1Lenses.tokenData to V1Samples.tokenData)
+        returning(Status.OK, V1Lenses.tokenData to V1Samples.tokenData.toDtoV1())
     } bindContract Method.GET to { request ->
         service
             .createInvitation(userId = auth(request))
-            .map {  Response(Status.OK).with(V1Lenses.tokenData of it) }
+            .map {  Response(Status.OK).with(V1Lenses.tokenData of it.toDtoV1()) }
             .mapFailure { it.toResponse() }
             .get()
     }
@@ -127,11 +125,11 @@ class UserApiV1(
         security = userSecurity
         tags += tag
         receiving(V1Lenses.tokenData)
-        returning(Status.OK, V1Lenses.user to V1Samples.user1)
+        returning(Status.OK, V1Lenses.user to V1Samples.user1.toDtoV1())
     } bindContract Method.POST to { request ->
         service
-            .acceptInvitation(userId = auth(request), invitation = V1Lenses.tokenData(request))
-            .map { Response(Status.OK).with(V1Lenses.user of it) }
+            .acceptInvitation(userId = auth(request), invitation = V1Lenses.tokenData(request).toModel())
+            .map { Response(Status.OK).with(V1Lenses.user of it.toDtoV1()) }
             .mapFailure { it.toResponse() }
             .get()
     }

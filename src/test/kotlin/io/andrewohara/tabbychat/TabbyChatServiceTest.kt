@@ -4,15 +4,17 @@ import dev.forkhandles.result4k.valueOrNull
 import dev.mrbergin.kotest.result4k.shouldBeFailure
 import dev.mrbergin.kotest.result4k.shouldBeSuccess
 import io.andrewohara.tabbychat.auth.AccessToken
-import io.andrewohara.tabbychat.auth.Authorization
 import io.andrewohara.tabbychat.auth.Realm
+import io.andrewohara.tabbychat.contacts.Authorization
 import io.andrewohara.tabbychat.contacts.TokenData
 import io.andrewohara.tabbychat.messages.toMessage
+import io.andrewohara.utils.jdk.plus
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
 import org.http4k.core.Uri
 import org.junit.jupiter.api.Test
+import java.time.Duration
 
 class TabbyChatServiceTest {
 
@@ -107,25 +109,23 @@ class TabbyChatServiceTest {
     }
 
     @Test
-    fun `create invitation - user not found`() {
-        tabbyChat.service.createInvitation(brownUser1.id) shouldBeFailure TabbyChatError.NotFound
-    }
-
-    @Test
     fun `create invitation`() {
         tabbyChat.service.createInvitation(tabbyUser1.id).shouldBeSuccess { invitation ->
-            invitation.userId shouldBe tabbyUser1.id
+            invitation.realm shouldBe tabbyChat.realm
 
-            tabbyChat.tokensDao.verify(invitation.token, driver.clock.instant()) shouldBe Authorization.Invite(
-                owner = tabbyUser1.id,
-                token = invitation.token
+            tabbyChat.authDao[invitation.accessToken] shouldBe Authorization(
+                principal = tabbyUser1.id,
+                bearer = null,
+                value = invitation.accessToken,
+                type = Authorization.Type.Invite,
+                expires = driver.clock + Duration.ofHours(12)
             )
         }
     }
 
     @Test
     fun `accept invitation - invalid token`() {
-        val fakeInvitation = TokenData(AccessToken("ABC123"), tabbyUser2.id, tabbyChat.realm, null)
+        val fakeInvitation = TokenData(AccessToken("ABC123"), tabbyChat.realm, null)
 
         tabbyChat.service.acceptInvitation(tabbyUser1.id, fakeInvitation) shouldBeFailure TabbyChatError.Forbidden
     }

@@ -13,7 +13,9 @@ import io.andrewohara.tabbychat.contacts.TokenData
 import io.andrewohara.tabbychat.messages.*
 import io.andrewohara.tabbychat.protocol.v1.V1Lenses
 import io.andrewohara.tabbychat.protocol.v1.api.P2PApiV1
+import io.andrewohara.tabbychat.protocol.v1.toDtoV1
 import io.andrewohara.tabbychat.protocol.v1.toError
+import io.andrewohara.tabbychat.protocol.v1.toModel
 
 fun interface P2PClientV1Factory: (Realm, AccessToken) -> P2PClientV1 {
 
@@ -26,19 +28,19 @@ fun interface P2PClientV1Factory: (Realm, AccessToken) -> P2PClientV1 {
         return P2PClientV1(client)
     }
 
-    operator fun invoke(token: TokenData): P2PClientV1 = invoke(token.realm, token.token)
+    operator fun invoke(token: TokenData): P2PClientV1 = invoke(token.realm, token.accessToken)
 }
 
 class P2PClientV1 internal constructor(private val backend: HttpHandler) {
 
     fun sendMessage(content: MessageContent): Result<MessageReceipt, TabbyChatError> {
         val response = Request(Method.POST, P2PApiV1.messagesPath)
-            .with(V1Lenses.messageContent of content)
+            .with(V1Lenses.messageContent of content.toDtoV1())
             .let(backend)
 
         if (!response.status.successful) return response.toError().err()
 
-        return Success(V1Lenses.messageReceipt(response))
+        return Success(V1Lenses.messageReceipt(response).toModel())
     }
 
     fun getUser(): Result<User, TabbyChatError> {
@@ -47,7 +49,7 @@ class P2PClientV1 internal constructor(private val backend: HttpHandler) {
 
         if (!response.status.successful) return response.toError().err()
 
-        return Success(V1Lenses.user(response))
+        return Success(V1Lenses.user(response).toModel())
     }
 
     fun revokeContact(): Result<Unit, TabbyChatError> {
@@ -59,13 +61,13 @@ class P2PClientV1 internal constructor(private val backend: HttpHandler) {
         return Success(Unit)
     }
 
-    fun exchangeTokens(tokenData: TokenData): Result<TokenData, TabbyChatError> {
-        val response = Request(Method.POST, P2PApiV1.tokensPath)
-            .with(V1Lenses.tokenData of tokenData)
+    fun addContact(tokenData: TokenData): Result<TokenData, TabbyChatError> {
+        val response = Request(Method.POST, P2PApiV1.contactsPath)
+            .with(V1Lenses.tokenData of tokenData.toDtoV1())
             .let(backend)
 
         if (!response.status.successful) return Failure(response.toError())
 
-        return Success(V1Lenses.tokenData(response))
+        return Success(V1Lenses.tokenData(response).toModel())
     }
 }
