@@ -18,13 +18,13 @@ object V1Samples {
     val user1 = User(
         id = UserId("toggles"),
         name = RealName(first = "Toggles", middle = null, last = "Brown"),
-        icon = Uri.of("http://tabbychat.io/icons/togglesBrown.jpg")
+        icon = "http://tabbychat.io/icons/togglesBrown.jpg"
     )
 
     val user2 = User(
         id = UserId("trollTroll"),
         name = RealName(first = "Toll", middle = "the", last = "Troll"),
-        icon = Uri.of("http://brownchat.com/icons/tollTroll.jpg")
+        icon = "http://brownchat.com/icons/tollTroll.jpg"
     )
 
     val userIds = listOf(user1.id, user2.id)

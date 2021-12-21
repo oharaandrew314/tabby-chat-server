@@ -31,7 +31,7 @@ fun User.toDtoV1() = UserDtoV1(
 fun UserDtoV1.toModel() = User(
     id = UserId(id),
     icon = icon,
-    name = name?.let {
+    name = name.let {
         RealName(
             first = it.first,
             middle = it.middle,

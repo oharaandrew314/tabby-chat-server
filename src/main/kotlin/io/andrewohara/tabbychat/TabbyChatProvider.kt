@@ -11,8 +11,8 @@ import io.andrewohara.tabbychat.contacts.Authorization
 import io.andrewohara.tabbychat.messages.dao.DynamoMessage
 import io.andrewohara.tabbychat.messages.dao.MessagesDao
 import io.andrewohara.tabbychat.protocol.v1.client.P2PClientV1Factory
+import io.andrewohara.tabbychat.users.User
 import io.andrewohara.tabbychat.users.UserId
-import io.andrewohara.tabbychat.users.dao.DynamoUser
 import io.andrewohara.tabbychat.users.dao.UsersDao
 import io.andrewohara.utils.http4k.ContractUi
 import org.http4k.client.JavaHttpClient
@@ -33,7 +33,7 @@ class TabbyChatProvider(
     val realm: Realm,
     messagesTable: DynamoDbTable<DynamoMessage>,
     authTable: DynamoDbTable<Authorization>,
-    usersTable: DynamoDbTable<DynamoUser>,
+    usersTable: DynamoDbTable<User>,
     contactsTable: DynamoDbTable<Contact>,
     clientFactory: P2PClientV1Factory = P2PClientV1Factory { JavaHttpClient() },
     tokenGenerator: AccessTokenGenerator = AccessTokenGenerator.base36(16),
@@ -122,7 +122,7 @@ class TabbyChatProvider(
                 clock = Clock.systemUTC(),
                 realm = realm,
                 clientFactory = { JavaHttpClient() },
-                usersTable = dynamo.table(usersTableName, DataClassTableSchema(DynamoUser::class)),
+                usersTable = dynamo.table(usersTableName, DataClassTableSchema(User::class)),
                 messagesTable = dynamo.table(messagesTableName, DataClassTableSchema(DynamoMessage::class)),
                 authTable = dynamo.table(authTableName, DataClassTableSchema(Authorization::class)),
                 contactsTable = dynamo.table(contactsTableName, DataClassTableSchema(Contact::class))

@@ -30,7 +30,7 @@ dependencies {
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.8.2")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
-    testImplementation("com.github.oharaandrew314:mock-aws-java-sdk:1.0.0-beta.3")
+    testImplementation("com.github.oharaandrew314:mock-aws-java-sdk:1.0.0-beta.4")
     testImplementation("io.kotest:kotest-runner-junit5")
     testImplementation("org.http4k:http4k-testing-kotest")
     testImplementation("dev.mrbergin:result4k-kotest-matchers:0.0.4")

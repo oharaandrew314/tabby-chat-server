@@ -17,7 +17,6 @@ import io.andrewohara.tabbychat.users.User
 import io.andrewohara.tabbychat.users.UserId
 import io.andrewohara.tabbychat.users.dao.UsersDao
 import org.http4k.core.Uri
-import java.net.URL
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
@@ -53,7 +52,7 @@ class TabbyChatService(
 
         val contact = contacts[userId, contactId] ?: return TabbyChatError.NotContact.err()
 
-        val receipt = clientFactory(contact.accessToken()).sendMessage(content).onFailure { return it }
+        val receipt = clientFactory(contact.tokenData).sendMessage(content).onFailure { return it }
         messages.add(userId, receipt.toMessage(content))
         return Success(receipt)
     }
@@ -72,7 +71,7 @@ class TabbyChatService(
         val contact = contacts[ownerId, contactId] ?: return TabbyChatError.NotContact.err()
 
         contacts -= contact
-        clientFactory(contact.accessToken()).revokeContact()
+        clientFactory(contact.tokenData).revokeContact()
 
         return Success(Unit)
     }
@@ -136,9 +135,7 @@ class TabbyChatService(
         contacts += Contact(
             ownerId = userId,
             id = inviter.id,
-            tokenValue = outgoingToken.accessToken,
-            realm = outgoingToken.realm,
-            tokenExpires = outgoingToken.expires
+            tokenData = outgoingToken
         )
 
         return Success(inviter)
@@ -156,9 +153,7 @@ class TabbyChatService(
         contacts += Contact(
             ownerId = userId,
             id = contact.id,
-            tokenValue = contactToken.accessToken,
-            realm = contactToken.realm,
-            tokenExpires = contactToken.expires
+            tokenData = contactToken
         )
         auth += Authorization(
             value = incoming.accessToken,
@@ -171,9 +166,9 @@ class TabbyChatService(
         return Success(incoming)
     }
 
-    fun createUser(name: RealName?, photo: Uri?): User {
+    fun createUser(name: RealName, photo: Uri?): User {
         val userId = UserId(UUID.randomUUID().toString())
-        return User(userId, name, photo).also(users::plusAssign)
+        return User(userId, name, photo.toString()).also(users::plusAssign)
     }
 
     fun getUser(userId: UserId): Result<User, TabbyChatError> {
@@ -184,7 +179,7 @@ class TabbyChatService(
     fun getContact(userId: UserId, contactId: UserId): Result<User, TabbyChatError> {
         val contact = contacts[userId, contactId] ?: return TabbyChatError.NotFound.err()
 
-        return clientFactory(contact.accessToken()).getUser()
+        return clientFactory(contact.tokenData).getUser()
     }
 
     fun authorize(accessToken: AccessToken): Authorization? {

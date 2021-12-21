@@ -10,9 +10,9 @@ import io.andrewohara.tabbychat.auth.AccessTokenGenerator
 import io.andrewohara.tabbychat.auth.Realm
 import io.andrewohara.tabbychat.contacts.Authorization
 import io.andrewohara.tabbychat.contacts.Contact
+import io.andrewohara.tabbychat.contacts.TokenData
 import io.andrewohara.tabbychat.messages.dao.DynamoMessage
 import io.andrewohara.tabbychat.users.User
-import io.andrewohara.tabbychat.users.dao.DynamoUser
 import io.andrewohara.utils.jdk.toClock
 import org.http4k.core.*
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient
@@ -39,7 +39,7 @@ class TestDriver: HttpHandler {
        clock = clock,
        realm = realm,
        messagesTable = dynamo.table("$realm-messages", DataClassTableSchema(DynamoMessage::class)).also { it.createTable() },
-       usersTable = dynamo.table("$realm-users", DataClassTableSchema(DynamoUser::class)).also { it.createTable() },
+       usersTable = dynamo.table("$realm-users", DataClassTableSchema(User::class)).also { it.createTable() },
        authTable = dynamo.table("$realm-auth", DataClassTableSchema(Authorization::class)).also { it.createTable() },
        contactsTable = dynamo.table("$realm-contacts", DataClassTableSchema(Contact::class)).also { it.createTable() },
        tokenGenerator = nextToken
@@ -67,9 +67,11 @@ class TestDriver: HttpHandler {
         getProvider(user1).contactsDao += Contact(
             ownerId = user1,
             id = user2,
-            tokenValue = token2,
-            realm = user2.realm(),
-            tokenExpires = null
+            tokenData = TokenData(
+                accessToken = token2,
+                realm = user2.realm(),
+                expires = null
+            )
         )
         getProvider(user1).authDao += Authorization(
             value = token1,
@@ -82,9 +84,11 @@ class TestDriver: HttpHandler {
         getProvider(user2).contactsDao += Contact(
             ownerId = user2,
             id = user1,
-            tokenValue = token1,
-            realm = user1.realm(),
-            tokenExpires = null
+            tokenData = TokenData(
+                accessToken = token1,
+                realm = user1.realm(),
+                expires = null
+            )
         )
         getProvider(user2).authDao += Authorization(
             value = token2,
