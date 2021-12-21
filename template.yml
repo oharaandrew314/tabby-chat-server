@@ -15,7 +15,7 @@ Globals:
         USERS_TABLE_NAME: !Ref Users
         CONTACTS_TABLE_NAME: !Ref Contacts
         MESSAGES_TABLE_NAME: !Ref Messages
-        TOKENS_TABLE_NAME: !Ref Tokens
+        AUTH_TABLE_NAME: !Ref Authorizations
 
 Resources:
   Api:
@@ -42,7 +42,7 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: !Ref Messages
         - DynamoDBCrudPolicy:
-            TableName: !Ref Tokens
+            TableName: !Ref Authorizations
       Events:
         HttpApiEvent:
           Type: HttpApi
@@ -65,12 +65,12 @@ Resources:
     Properties:
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
-        - AttributeName: owner
+        - AttributeName: ownerId
           AttributeType: S
         - AttributeName: id
           AttributeType: S
       KeySchema:
-        - AttributeName: owner
+        - AttributeName: ownerId
           KeyType: HASH
         - AttributeName: id
           KeyType: RANGE
@@ -80,17 +80,17 @@ Resources:
     Properties:
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
-        - AttributeName: owner
+        - AttributeName: ownerId
           AttributeType: S
         - AttributeName: id
           AttributeType: S
       KeySchema:
-        - AttributeName: owner
+        - AttributeName: ownerId
           KeyType: HASH
         - AttributeName: id
           KeyType: RANGE
 
-  Tokens:
+  Authorizations:
     Type: AWS::DynamoDB::Table
     Properties:
       BillingMode: PAY_PER_REQUEST
@@ -100,3 +100,6 @@ Resources:
       KeySchema:
         - AttributeName: value
           KeyType: HASH
+      TimeToLiveSpecification:
+        AttributeName: expires
+        Enabled: true

@@ -1,9 +1,9 @@
 package io.andrewohara.tabbychat.users
 
-import java.net.URL
+import org.http4k.core.Uri
 
 data class User(
     val id: UserId,
     val name: RealName?,
-    val icon: URL?
+    val icon: Uri?
 )

@@ -4,9 +4,9 @@ import io.andrewohara.dynamokt.DynamoKtConverted
 import io.andrewohara.dynamokt.DynamoKtPartitionKey
 import io.andrewohara.tabbychat.lib.dao.UserIdConverter
 import io.andrewohara.tabbychat.users.*
+import org.http4k.core.Uri
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable
 import software.amazon.awssdk.enhanced.dynamodb.Key
-import java.net.URL
 
 class UsersDao(private val mapper: DynamoDbTable<DynamoUser>): Iterable<User> {
 
@@ -28,7 +28,7 @@ class UsersDao(private val mapper: DynamoDbTable<DynamoUser>): Iterable<User> {
 private fun DynamoUser.toUser() = User(
     id = id,
     name = firstName?.let { RealName(it, middleName, lastName) },
-    icon = photoUrl?.let { URL(it) }
+    icon = photoUrl?.let { Uri.of(it) }
 )
 
 private fun User.toDynamo() = DynamoUser(

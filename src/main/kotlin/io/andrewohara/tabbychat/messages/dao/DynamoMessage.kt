@@ -13,7 +13,7 @@ import java.time.Instant
 data class DynamoMessage(
     @DynamoKtPartitionKey
     @DynamoKtConverted(UserIdConverter::class)
-    val owner: UserId,
+    val ownerId: UserId,
 
     @DynamoKtSortKey
     val id: String,
@@ -38,7 +38,7 @@ fun DynamoMessage.toMessage() = Message(
 )
 
 fun Message.toDynamo(owner: UserId) = DynamoMessage(
-    owner = owner,
+    ownerId = owner,
     recipient = recipient,
     id = "$received-${IdGenerator.nextBase36(4)}",
     textContent = content.text,

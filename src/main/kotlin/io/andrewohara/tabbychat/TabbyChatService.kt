@@ -16,6 +16,7 @@ import io.andrewohara.tabbychat.users.RealName
 import io.andrewohara.tabbychat.users.User
 import io.andrewohara.tabbychat.users.UserId
 import io.andrewohara.tabbychat.users.dao.UsersDao
+import org.http4k.core.Uri
 import java.net.URL
 import java.time.Clock
 import java.time.Duration
@@ -170,7 +171,7 @@ class TabbyChatService(
         return Success(incoming)
     }
 
-    fun createUser(name: RealName?, photo: URL?): User {
+    fun createUser(name: RealName?, photo: Uri?): User {
         val userId = UserId(UUID.randomUUID().toString())
         return User(userId, name, photo).also(users::plusAssign)
     }

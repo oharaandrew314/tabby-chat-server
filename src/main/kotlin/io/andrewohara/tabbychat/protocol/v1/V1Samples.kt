@@ -11,7 +11,6 @@ import io.andrewohara.tabbychat.users.RealName
 import io.andrewohara.tabbychat.users.User
 import io.andrewohara.tabbychat.users.UserId
 import org.http4k.core.Uri
-import java.net.URL
 import java.time.Instant
 
 object V1Samples {
@@ -19,13 +18,13 @@ object V1Samples {
     val user1 = User(
         id = UserId("toggles"),
         name = RealName(first = "Toggles", middle = null, last = "Brown"),
-        icon = URL("http://tabbychat.io/icons/togglesBrown.jpg")
+        icon = Uri.of("http://tabbychat.io/icons/togglesBrown.jpg")
     )
 
     val user2 = User(
         id = UserId("trollTroll"),
         name = RealName(first = "Toll", middle = "the", last = "Troll"),
-        icon = URL("http://brownchat.com/icons/tollTroll.jpg")
+        icon = Uri.of("http://brownchat.com/icons/tollTroll.jpg")
     )
 
     val userIds = listOf(user1.id, user2.id)

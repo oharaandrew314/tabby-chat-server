@@ -10,7 +10,6 @@ import io.andrewohara.tabbychat.messages.MessageReceipt
 import io.andrewohara.tabbychat.users.RealName
 import io.andrewohara.tabbychat.users.User
 import io.andrewohara.tabbychat.users.UserId
-import java.net.URL
 
 // UserId
 fun String.toUserId() = UserId(this)
@@ -27,11 +26,11 @@ fun User.toDtoV1() = UserDtoV1(
             last = it.last
         )
     },
-    icon = icon?.toString()
+    icon = icon
 )
 fun UserDtoV1.toModel() = User(
     id = UserId(id),
-    icon = icon?.let { URL(it) },
+    icon = icon,
     name = name?.let {
         RealName(
             first = it.first,

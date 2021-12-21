@@ -22,17 +22,12 @@ class UserApiV1(
     private val auth: RequestContextLens<UserId>
     ) {
 
-    companion object {
-        const val contactsPath = "/client/v1/contacts"
-        val contactPath = contactsPath / V1Lenses.userId
-        val contactMessagesPath = contactPath / "messages"
-        const val messagesPath = "/client/v1/messages"
-        const val invitationsPath = "/client/v1/invitations"
-    }
+    private val contactPath = V1Paths.contactsPath / V1Lenses.userId
+    private val contactMessagesPath = contactPath / "messages"
 
     private val tag = Tag("Client", "Used by clients to work with their own provider")
 
-    private val listContactIds = contactsPath meta {
+    private val listContactIds = V1Paths.contactsPath meta {
         operationId = "v1ListContactIds"
         summary = "List the ids of your contacts"
         security = userSecurity
@@ -74,7 +69,7 @@ class UserApiV1(
         }
     }
 
-    private val listMessages = messagesPath meta {
+    private val listMessages = V1Paths.messagesPath meta {
         operationId = "v1ListMessages"
         summary = "Get a page of messages starting from the given time"
         security = userSecurity
@@ -105,7 +100,7 @@ class UserApiV1(
         }
     }
 
-    private val createInvitation = invitationsPath meta {
+    private val createInvitation = V1Paths.invitationsPath meta {
         operationId = "v1CreateInvitation"
         summary = "Create an invitation code to be shared"
         security = userSecurity
@@ -119,7 +114,7 @@ class UserApiV1(
             .get()
     }
 
-    private val acceptInvitation = invitationsPath meta {
+    private val acceptInvitation = V1Paths.invitationsPath meta {
         operationId = "v1AcceptInvitation"
         summary = "Accept the given invitation code, adding the user as a contact"
         security = userSecurity

@@ -115,7 +115,7 @@ class TabbyChatProvider(
             val realm = Realm(Uri.of(env.getValue("REALM")))
             val usersTableName = env.getValue("USERS_TABLE_NAME")
             val messagesTableName = env.getValue("MESSAGES_TABLE_NAME")
-            val tokensTableName = env.getValue("TOKENS_TABLE_NAME")
+            val authTableName = env.getValue("AUTH_TABLE_NAME")
             val contactsTableName = env.getValue("CONTACTS_TABLE_NAME")
 
             return TabbyChatProvider(
@@ -124,7 +124,7 @@ class TabbyChatProvider(
                 clientFactory = { JavaHttpClient() },
                 usersTable = dynamo.table(usersTableName, DataClassTableSchema(DynamoUser::class)),
                 messagesTable = dynamo.table(messagesTableName, DataClassTableSchema(DynamoMessage::class)),
-                authTable = dynamo.table(tokensTableName, DataClassTableSchema(Authorization::class)),
+                authTable = dynamo.table(authTableName, DataClassTableSchema(Authorization::class)),
                 contactsTable = dynamo.table(contactsTableName, DataClassTableSchema(Contact::class))
             )
         }

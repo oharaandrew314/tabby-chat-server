@@ -6,7 +6,7 @@ import java.time.Instant
 data class UserDtoV1(
     val id: String,
     val name: RealNameDtoV1?,
-    val icon: String?
+    val icon: Uri?
 )
 
 data class RealNameDtoV1(
