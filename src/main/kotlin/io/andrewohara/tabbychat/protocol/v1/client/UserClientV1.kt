@@ -8,18 +8,14 @@ import org.http4k.core.*
 import org.http4k.filter.ClientFilters
 import java.time.Instant
 
-class UserClientFactoryV1(private val backend: HttpHandler): (TokenDataDtoV1) -> UserClientV1 {
+class UserClientV1 private constructor(private val backend: HttpHandler) {
 
-    override fun invoke(token: TokenDataDtoV1): UserClientV1 {
-        val client = ClientFilters.BearerAuth(token.accessToken)
+    companion object {
+        operator fun invoke(token: TokenDataDtoV1, client: HttpHandler) = ClientFilters.BearerAuth(token.accessToken)
             .then(ClientFilters.SetHostFrom(token.realm))
-            .then(backend)
-
-        return UserClientV1(client)
+            .then(client)
+            .let { UserClientV1(it) }
     }
-}
-
-class UserClientV1(private val backend: HttpHandler) {
 
     fun listContactIds(): Result<Array<String>, TabbyChatError> {
         val response = Request(Method.GET, V1Paths.contactsPath)

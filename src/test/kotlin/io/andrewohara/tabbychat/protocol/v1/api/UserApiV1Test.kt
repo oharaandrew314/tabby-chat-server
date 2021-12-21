@@ -6,7 +6,7 @@ import dev.mrbergin.kotest.result4k.shouldBeSuccess
 import io.andrewohara.tabbychat.*
 import io.andrewohara.tabbychat.auth.Realm
 import io.andrewohara.tabbychat.contacts.TokenData
-import io.andrewohara.tabbychat.protocol.v1.client.UserClientFactoryV1
+import io.andrewohara.tabbychat.protocol.v1.client.UserClientV1
 import io.andrewohara.tabbychat.protocol.v1.toDtoV1
 import io.andrewohara.utils.jdk.minus
 import io.kotest.matchers.collections.shouldBeEmpty
@@ -32,7 +32,7 @@ class UserApiV1Test {
     }
     private val other = provider.createUser("other")
 
-    private val client = UserClientFactoryV1(provider)(selfToken.toDtoV1())
+    private val client = UserClientV1(selfToken.toDtoV1(), provider)
 
     @Test
     fun `get contact`() {
