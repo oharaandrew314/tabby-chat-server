@@ -86,11 +86,11 @@ class TabbyChatProvider(
 
         val descriptionPath = "/swagger.json"
         val v1Contract = ContractUi(
-            pageTitle = "Stream Service",
+            pageTitle = "TabbyChat Reference Provider",
             contract = contract {
                 renderer = OpenApi3(
                     ApiInfo(
-                        title = "Stream Service",
+                        title = "TabbyChat Reference Provider",
                         version = "v1.0"
                     )
                 )
